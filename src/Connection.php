@@ -153,6 +153,17 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 
 		if ( $this->is_connected() ) {
 
+			// Debug mode checkbox.
+			$options[ "noptin_{$slug}_debug_mode" ] = array(
+				'type'        => 'checkbox_alt',
+				'el'          => 'input',
+				'section'	  => 'integrations',
+				'label'       => __( 'Enable debug mode', 'newsletter-optin-box' ),
+				'description' => __( 'Enable debug mode to log all API requests and responses.', 'newsletter-optin-box' ),
+				'default'     => false,
+				'restrict'    => $this->get_enable_integration_option_name(),
+			);
+
 			// Double optin.
 			if ( $this->double_optin ) {
 
@@ -633,8 +644,12 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 			}
 		}
 
-		return wp_kses_post( "<span style='color: #43a047;' v-if='$option'>$enabled</span><span style='color: #616161;' v-else>$disabled</span>" );
-
+		return sprintf(
+			'<span style="color: #43a047;" v-if="%s">%s</span><span style="color: #616161;" v-else>%s</span>',
+			esc_attr( $option ),
+			wp_kses_post( $enabled ),
+			wp_kses_post( $disabled )
+		);
 	}
 
 	/**
@@ -646,4 +661,36 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 	public function enabled_double_optin() {
 		return (bool) get_noptin_option( "noptin_{$this->slug}_enable_double_optin", false );
 	}
+
+	/**
+	 * Checks if debug mode is enabled.
+	 *
+	 * @return bool
+	 */
+	public function is_debug_mode() {
+		return (bool) get_noptin_option( "noptin_{$this->slug}_debug_mode", false );
+	}
+
+	/**
+	 * Logs debug messages.
+	 *
+	 * @param string $message Log message.
+	 * @param string $level Optional. Default 'info'. Possible values:
+	 *                      emergency|alert|critical|error|warning|notice|info|debug.
+	 * @param array  $data  Optional. Extra error data. Default empty array.
+	 */
+	public function log( $message, $level = 'info', $data = array() ) {
+
+		if ( $this->is_debug_mode() ) {
+			$context = array(
+				'connection' => $this->name,
+				'module'     => 'noptin-connection',
+				'source'     => 'noptin-connection-' . $this->slug,
+				'data'       => $data,
+			);
+
+			\Hizzle\Logger\Logger::get_instance()->log( $level, $message, $context );
+		}
+	}
+
 }

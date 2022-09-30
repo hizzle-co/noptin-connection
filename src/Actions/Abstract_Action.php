@@ -75,8 +75,8 @@ abstract class Abstract_Action extends \Noptin_Abstract_Action {
 			$settings[ "{$prefix}{$custom_field->id}" ] = array(
 				'type'        => 'text',
 				'el'          => 'input',
-				'label'       => $custom_field['name'],
-				'description' => $custom_field['description'],
+				'label'       => $custom_field->name,
+				'description' => $custom_field->description,
 				'default'     => $custom_field->default,
 				'description' => sprintf(
 					'%s<p class="description" v-show="availableSmartTags">%s</p>',

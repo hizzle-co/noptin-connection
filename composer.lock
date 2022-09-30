@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "hizzle/logger",
-            "version": "0.0.1",
+            "version": "0.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/hizzle-co/hizzle-logger.git",
-                "reference": "d40c4d66e1db9492c2cccf2d9793d5a724b05a83"
+                "reference": "8b50ce63b51812c7d5d218dc2ad4273c8f1dde9d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hizzle-co/hizzle-logger/zipball/d40c4d66e1db9492c2cccf2d9793d5a724b05a83",
-                "reference": "d40c4d66e1db9492c2cccf2d9793d5a724b05a83",
+                "url": "https://api.github.com/repos/hizzle-co/hizzle-logger/zipball/8b50ce63b51812c7d5d218dc2ad4273c8f1dde9d",
+                "reference": "8b50ce63b51812c7d5d218dc2ad4273c8f1dde9d",
                 "shasum": ""
             },
             "require": {
@@ -50,9 +50,9 @@
             ],
             "support": {
                 "issues": "https://github.com/hizzle-co/hizzle-logger/issues",
-                "source": "https://github.com/hizzle-co/hizzle-logger/tree/0.0.1"
+                "source": "https://github.com/hizzle-co/hizzle-logger/tree/0.0.2"
             },
-            "time": "2022-07-08T04:23:45+00:00"
+            "time": "2022-09-30T11:30:29+00:00"
         }
     ],
     "packages-dev": [],

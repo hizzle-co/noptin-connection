@@ -111,8 +111,8 @@ class List_Table extends \WP_List_Table {
 		}
 
 		// Filter by level.
-		if ( ! empty( $_GET['hlog_level'] ) && Levels::is_valid_level( $_GET['hlog_level'] ) ) {
-			$sql .= $wpdb->prepare( ' AND `level` = %d', Levels::get_level_severity( $_GET['hlog_level'] ) );
+		if ( ! empty( $_GET['hlog_level'] ) && Levels::is_valid_level( sanitize_text_field( $_GET['hlog_level'] ) ) ) {
+			$sql .= $wpdb->prepare( ' AND `level` = %d', Levels::get_level_severity( sanitize_text_field( $_GET['hlog_level'] ) ) );
 		}
 
 		// Order by.

@@ -37,6 +37,11 @@ class API_Client {
 	protected $last_request;
 
 	/**
+	 * @var string
+	 */
+	protected $connection;
+
+	/**
 	 * @param string $resource
 	 * @param array $args
 	 *
@@ -99,6 +104,8 @@ class API_Client {
 	protected function request( $method, $resource, $data = array() ) {
 		$this->reset();
 
+		$this->log( "Sending a {$method} request to {$resource}", 'info', $data );
+
 		if ( 'https://' !== substr( $resource, 0, 8 ) ) {
 			$url = trailingslashit( $this->base_url ) . ltrim( $resource, '/' );
 		} else {
@@ -134,7 +141,18 @@ class API_Client {
 		$this->last_response = $response;
 
 		// Parse Response
-		return $this->parse_response( $response );
+		try {
+			$parsed_response = $this->parse_response( $response );
+		} catch ( \Exception $e ) {
+			$this->log( $e->getMessage(), 'error', $response );
+			throw $e;
+		}
+
+		// Log the response.
+		$this->log( "Received a {$method} response from {$resource}", 'info', $parsed_response );
+
+		// Return the response.
+		return $parsed_response;
 	}
 
 	/**
@@ -166,8 +184,8 @@ class API_Client {
 
 		// JSON requests.
 		if ( $this->is_json ) {
-			$headers['Accept']        = 'application/json';
-			$headers['Content-Type']  = 'application/json';
+			$headers['Accept']       = 'application/json';
+			$headers['Content-Type'] = 'application/json';
 		}
 
 		return $headers;
@@ -240,5 +258,22 @@ class API_Client {
 	 */
 	public function get_last_request() {
 		return $this->last_request;
+	}
+
+	/**
+	 * Logs debug messages.
+	 *
+	 * @param string $message Log message.
+	 * @param string $level Optional. Default 'info'. Possible values:
+	 *                      emergency|alert|critical|error|warning|notice|info|debug.
+	 * @param array  $data  Optional. Extra error data. Default empty array.
+	 */
+	public function log( $message, $level = 'info', $data = array() ) {
+		if ( ! empty( $this->connection ) ) {
+			/** @var Connection $connection */
+			$connection = noptin()->integrations->integrations[ $this->connection ];
+			$message    = sprintf( '[%s] %s', $connection->name, $message );
+			$connection->log( $message, $level, $data );
+		}
 	}
 }
