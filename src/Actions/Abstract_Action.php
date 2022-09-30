@@ -83,7 +83,7 @@ abstract class Abstract_Action extends \Noptin_Abstract_Action {
 					wp_kses_post( $custom_field->description ),
 					sprintf(
 						/* translators: %1: Opening link, %2 closing link tag. */
-						esc_html__( 'You can use %1$ssmart tags %2$s to enter a dynamic value.', 'newsletter-optin-box' ),
+						esc_html__( 'Enter a value or %1$suse smart tags%2$s to map a dynamic value.', 'newsletter-optin-box' ),
 						'<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox">',
 						'</a>'
 					)
@@ -95,6 +95,15 @@ abstract class Abstract_Action extends \Noptin_Abstract_Action {
 
 		return $settings;
 
+	}
+
+	/**
+	 * Returns the restrict key.
+	 *
+	 * @param string $raw_key The raw key.
+	 */
+	protected function get_restrict_key( $raw_key ) {
+		return "action_settings['" . esc_attr( $raw_key ) . "']";
 	}
 
 	/**

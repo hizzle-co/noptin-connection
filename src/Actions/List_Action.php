@@ -54,36 +54,35 @@ abstract class List_Action extends Abstract_Action {
 	 * @inheritdoc
 	 */
 	public function get_rule_description( $rule ) {
-		$settings = $rule->trigger_settings;
+
+		// Fetch the parent and child lists.
+		list( $group, $lists ) = $this->get_list_and_group( $rule->action_settings );
 
 		// In cases where the lists are grouped by type.
 		if ( ! empty( $this->group_type ) ) {
 
 			// Abort if a group was not specified.
-			if ( empty( $settings[ $this->group_type ] ) ) {
+			if ( empty( $group ) ) {
 				return $this->get_description();
 			}
 
 			$groups     = $this->get_parents();
-			$group_id   = $settings[ $this->group_type ];
-			$group_name = isset( $groups[ $group_id ] ) ? $groups[ $group_id ] : $group_id;
+			$group_name = isset( $groups[ $group ] ) ? $groups[ $group ] : $group;
 
-			// Check if we have a list for this group.
-			if ( empty( $settings[ $group_id ] ) ) {
+			// Check if we have a child list for this group.
+			if ( empty( $lists ) ) {
 				return sprintf(
 					'%s <p class="description">%s</p>',
 					$this->get_description(),
-					sprintf( '%s: %s', esc_html( $this->group_name ), esc_html( $group_name ) )
+					sprintf( '%s: <code>%s</code>', esc_html( $this->group_name ), esc_html( $group_name ) )
 				);
 			}
-
-			$lists = $settings[ $group_id ];
 
 			if ( $this->is_taggy ) {
 				$list_names = $lists;
 				$plural     = 1 < count( noptin_parse_list( $list_names, 1 ) );
 			} else {
-				$all_lists  = $this->get_children( $group_id );
+				$all_lists  = $this->get_children( $group );
 				$list_names = array();
 
 				foreach ( noptin_parse_list( $lists, 1 ) as $list_id ) {
@@ -98,7 +97,7 @@ abstract class List_Action extends Abstract_Action {
 				'%s <p class="description">%s</p>',
 				$this->get_description(),
 				sprintf(
-					'%s: %s, %s: %s',
+					'%s: <code>%s</code>, %s: <code>%s</code>',
 					esc_html( $this->group_name ),
 					esc_html( $group_name ),
 					esc_html( $plural ? $this->list_name_plural : $this->list_name ),
@@ -107,18 +106,16 @@ abstract class List_Action extends Abstract_Action {
 			);
 		} else {
 
-			if ( empty( $settings[ $this->list_type ] ) ) {
+			if ( empty( $lists ) ) {
 				return $this->get_description();
 			}
 
-			$list = $settings[ $this->list_type ];
-
 			if ( $this->is_taggy ) {
-				$list_name = $list;
-				$plural    = 1 < count( noptin_parse_list( $list, 1 ) );
+				$list_name = $lists;
+				$plural    = 1 < count( noptin_parse_list( $lists, 1 ) );
 			} else {
-				$lists     = $this->get_lists();
-				$list_name = isset( $lists[ $list ] ) ? $lists[ $list ] : $list;
+				$all_lists = $this->get_lists();
+				$list_name = isset( $all_lists[ $lists ] ) ? $all_lists[ $lists ] : $lists;
 				$plural    = false;
 			}
 
@@ -126,7 +123,7 @@ abstract class List_Action extends Abstract_Action {
 				'%s <p class="description">%s</p>',
 				$this->get_description(),
 				sprintf(
-					'%s: %s',
+					'%s: <code>%s</code>',
 					esc_html( $plural ? $this->list_name_plural : $this->list_name ),
 					esc_html( $list_name )
 				)
@@ -204,27 +201,25 @@ abstract class List_Action extends Abstract_Action {
 		$parent   = '';
 		$children = '';
 
-		// In cases where the lists are grouped by type.
-		if ( ! empty( $this->group_type ) ) {
+		// If default list type, we'll have no parent.
+		if ( empty( $this->group_type ) ) {
+			if ( ! empty( $settings[ $this->list_type ] ) ) {
+				$children = $settings[ $this->list_type ];
+			}
+		} else { // Child lists that are grouped by the parent list.
 
-			// Provide parent.
+			// Set parent.
 			if ( ! empty( $settings[ $this->group_type ] ) ) {
 				$parent = $settings[ $this->group_type ];
 			}
 
-			// Taggy lists.
-			if ( $this->is_taggy && ! empty( $settings[ $this->list_type ] ) ) {
-				$children = $settings[ $this->list_type ];
-			}
-
-			// Check if we have a list for this group.
-			if ( ! $this->is_taggy && $parent && ! empty( $settings[ "{child_$parent}" ] ) ) {
-				$children = $settings[ "{child_$parent}" ];
-			}
-		} else {
-
-			if ( ! empty( $settings[ $this->list_type ] ) ) {
-				$children = $settings[ $this->list_type ];
+			// Set child.
+			if ( $this->is_taggy ) {
+				if ( ! empty( $settings[ $this->list_type ] ) ) {
+					$children = $settings[ $this->list_type ];
+				}
+			} else if ( ! empty( $parent ) && ! empty( $settings[ "child_{$parent}" ] ) ) {
+				$children = $settings[ "child_{$parent}" ];
 			}
 		}
 

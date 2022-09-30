@@ -97,7 +97,7 @@ class Add_List extends List_Action {
 			foreach ( array_keys( $lists ) as $id ) {
 				$settings = array_merge(
 					$settings,
-					$this->get_custom_field_settings( $id, esc_attr( $this->list_type ) . "=='" . esc_attr( $id ) . "'" )
+					$this->get_custom_field_settings( $id, $this->get_restrict_key( $this->list_type ) . "=='" . esc_attr( $id ) . "'" )
 				);
 			}
 		} elseif ( ! empty( $this->group_type ) ) { // Child lists that are grouped by the parent list.
@@ -115,7 +115,8 @@ class Add_List extends List_Action {
 			// Select child list.
 			if ( $this->is_taggy ) {
 				$settings[ $this->list_type ] = array(
-					'el'          => 'text',
+					'el'          => 'input',
+					'type'        => 'text',
 					'label'       => $this->list_name_plural,
 					'description' => sprintf(
 						// translators: %s is the plural form of the list name.
@@ -131,7 +132,7 @@ class Add_List extends List_Action {
 						'el'       => 'multi_checkbox_alt',
 						'label'    => $this->list_name_plural,
 						'options'  => $this->get_children( $group_id ),
-						'restrict' => esc_attr( $this->group_type ) . "=='" . esc_attr( $group_id ) . "'",
+						'restrict' => $this->get_restrict_key( $this->group_type ) . "=='" . esc_attr( $group_id ) . "'",
 						'default'  => array(),
 					);
 				}
@@ -141,11 +142,7 @@ class Add_List extends List_Action {
 			$settings['create_if_not_exists'] = array(
 				'type'        => 'checkbox_alt',
 				'el'          => 'input',
-				'label'       => sprintf(
-                    // Translators: %s is the name of the subscriber, E.g, contacts, subscribers, users, etc
-                    __( 'Create missing %s', 'newsletter-optin-box' ),
-                    $this->subscriber_name_plural
-                ),
+				'label'       => '&nbsp;',
 				'description' => sprintf(
                     // Translators: %s is the name of the subscriber, E.g, contact, subscriber, user, etc
                     __( 'Create a new %1$s if they do not exist in %2$s.', 'newsletter-optin-box' ),
@@ -159,19 +156,29 @@ class Add_List extends List_Action {
 			foreach ( array_keys( $groups ) as $id ) {
 				$settings = array_merge(
 					$settings,
-					$this->get_custom_field_settings( $id, esc_attr( $this->list_type ) . "=='" . esc_attr( $id ) . "' && create_if_not_exists" )
+					$this->get_custom_field_settings( $id, $this->get_restrict_key( $this->group_type ) . "=='" . esc_attr( $id ) . "' && " . $this->get_restrict_key( 'create_if_not_exists' ) )
 				);
 			}
 		} else { // Child lists that are not grouped by the parent list.
 
 			if ( $this->is_taggy ) {
 				$settings[ $this->list_type ] = array(
-					'el'          => 'text',
+					'el'          => 'input',
+					'type'        => 'text',
 					'label'       => $this->list_name_plural,
 					'description' => sprintf(
-						// translators: %s is the plural form of the list name.
-						__( 'Enter a comma separated list of %s.', 'newsletter-optin-box' ),
-						strtolower( $this->list_name_plural )
+						'%s<p class="description" v-show="availableSmartTags">%s</p>',
+						sprintf(
+							// translators: %s is the plural form of the list name.
+							__( 'Enter a comma separated list of %s.', 'newsletter-optin-box' ),
+							strtolower( $this->list_name_plural )
+						),
+						sprintf(
+							/* translators: %1: Opening link, %2 closing link tag. */
+							esc_html__( 'You can use %1$ssmart tags%2$s to enter a dynamic value.', 'newsletter-optin-box' ),
+							'<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox">',
+							'</a>'
+						)
 					),
 					'default'     => '',
 				);

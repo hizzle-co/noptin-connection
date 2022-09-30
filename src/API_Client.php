@@ -104,7 +104,7 @@ class API_Client {
 	protected function request( $method, $resource, $data = array() ) {
 		$this->reset();
 
-		$this->log( "Sending a {$method} request to {$resource}", 'info', $data );
+		$this->log( "Sending a {$method} request to {$resource}", 'info', array( 'backtrace' => wp_debug_backtrace_summary() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 
 		if ( 'https://' !== substr( $resource, 0, 8 ) ) {
 			$url = trailingslashit( $this->base_url ) . ltrim( $resource, '/' );
@@ -116,7 +116,7 @@ class API_Client {
 		$args = array(
 			'url'       => $url,
 			'method'    => $method,
-			'headers'   => $this->get_headers(),
+			'headers'   => $this->get_headers( $method ),
 			'timeout'   => 10,
 			'sslverify' => apply_filters( 'noptin_connection_use_sslverify', true ),
 		);
@@ -131,10 +131,10 @@ class API_Client {
 		}
 
 		// Filter the request args.
-		$args = apply_filters( 'noptin_connection_request_args', $args, $method, $url );
+		$args = apply_filters( 'noptin_connection_request_args', $args, $method, $args['url'] );
 
 		// Perform request.
-		$response = wp_remote_request( $url, $args );
+		$response = wp_remote_request( $args['url'], $args );
 
 		// store request & response
 		$this->last_request  = $args;
@@ -169,7 +169,7 @@ class API_Client {
 	/**
 	* @return array
 	*/
-	protected function get_headers() {
+	protected function get_headers( $method ) {
 		global $wp_version;
 
 		$headers = array(
@@ -184,8 +184,11 @@ class API_Client {
 
 		// JSON requests.
 		if ( $this->is_json ) {
-			$headers['Accept']       = 'application/json';
-			$headers['Content-Type'] = 'application/json';
+			$headers['Accept'] = 'application/json';
+
+			if ( ! in_array( $method, array( 'GET', 'DELETE' ), true ) ) {
+				$headers['Content-Type'] = 'application/json';
+			}
 		}
 
 		return $headers;

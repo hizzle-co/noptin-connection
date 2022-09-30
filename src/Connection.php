@@ -63,6 +63,14 @@ abstract class Connection extends \Noptin_Abstract_Integration {
         // Redirect to the connection settings page on install.
 		add_action( 'admin_init', array( $this, 'activation_redirect' ), $this->priority );
 
+		// Clear cache when settings are saved.
+		add_action( 'noptin_admin_save_options', array( $this, 'empty_cache' ), $this->priority );
+
+		// Debug mode.
+		if ( $this->is_debug_mode() ) {
+			add_filter( 'hizzle_logger_admin_show_menu', '__return_true' );
+		}
+
 		// Oauth connections.
 		if ( $this->is_oauth ) {
 			add_action( 'noptin_connect_' . $this->slug, array( $this, 'oauth_connect' ), $this->priority );
@@ -159,7 +167,13 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 				'el'          => 'input',
 				'section'	  => 'integrations',
 				'label'       => __( 'Enable debug mode', 'newsletter-optin-box' ),
-				'description' => __( 'Enable debug mode to log all API requests and responses.', 'newsletter-optin-box' ),
+				'description' => sprintf(
+					'%s <a href="%s" v-if="%s" target="_blank">&nbsp;%s</a>',
+					__( 'Enable debug mode to log all API requests and responses.', 'newsletter-optin-box' ),
+					esc_url( admin_url( 'tools.php?page=hizzle-logger&hlog_source=noptin-connection-' . urlencode( $this->slug ) ) ),
+					"noptin_{$slug}_debug_mode",
+					__( 'View logs', 'newsletter-optin-box' )
+				),
 				'default'     => false,
 				'restrict'    => $this->get_enable_integration_option_name(),
 			);
