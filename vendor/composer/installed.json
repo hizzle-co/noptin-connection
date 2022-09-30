@@ -1,0 +1,57 @@
+{
+    "packages": [
+        {
+            "name": "hizzle/logger",
+            "version": "0.0.1",
+            "version_normalized": "0.0.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hizzle-co/hizzle-logger.git",
+                "reference": "d40c4d66e1db9492c2cccf2d9793d5a724b05a83"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hizzle-co/hizzle-logger/zipball/d40c4d66e1db9492c2cccf2d9793d5a724b05a83",
+                "reference": "d40c4d66e1db9492c2cccf2d9793d5a724b05a83",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "time": "2022-07-08T04:23:45+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "Hizzle\\Logger\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0+"
+            ],
+            "authors": [
+                {
+                    "name": "Brian Mutende",
+                    "email": "picocodes@gmail.com",
+                    "homepage": "http://github.com/picocodes/",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A standardized way of logging errors for your projects",
+            "homepage": "http://github.com/hizzle-co/logger/",
+            "keywords": [
+                "hizzle",
+                "log",
+                "wordpress"
+            ],
+            "support": {
+                "issues": "https://github.com/hizzle-co/hizzle-logger/issues",
+                "source": "https://github.com/hizzle-co/hizzle-logger/tree/0.0.1"
+            },
+            "install-path": "../hizzle/logger"
+        }
+    ],
+    "dev": true,
+    "dev-package-names": []
+}
