@@ -100,6 +100,9 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 
 		// Automation rules.
 		add_action( 'noptin_automation_rules_load', array( $this, 'register_automation_rules' ) );
+
+		// Map subscriber fields to customer fields.
+		add_action( 'noptin_custom_field_settings', array( $this, 'map_contact_to_custom_fields' ), $this->priority );
 	}
 
 	/**
@@ -332,72 +335,6 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 	}
 
 	/**
-	 * Registers list options.
-	 *
-	 * @since 1.0.0
-	 * @param array $options
-	 * @param string $slug
-	 * @param \Noptin_Abstract_Integration $integration
-	 */
-	public function add_list_options( $options, $slug, $integration ) {
-
-		if ( 'normal' === $integration->integration_type || 'ecommerce' === $integration->integration_type ) {
-
-			$via  = str_replace( '_form', '', $slug );
-			$via .= 'ecommerce' === $integration->integration_type ? '_checkout' : '';
-
-			// Default lists.
-			foreach ( $this->list_types as $list_type ) {
-
-				$option = sanitize_text_field( "noptin_{$this->slug}_{$via}_default_{$list_type->id}" );
-
-				if ( $list_type->is_taggy ) {
-
-					$options[ $option ] = array(
-						'el'          => 'input',
-						'section'     => 'integrations',
-						'label'       => sprintf(
-							// translators: %s is the integration name, %2 is the list type name.
-							__( 'Default %1$s %2$s', 'newsletter-optin-box' ),
-							$this->name,
-							$list_type->name_plural
-						),
-						'restrict'    => sprintf(
-							'%s && %s',
-							$this->get_enable_integration_option_name(),
-							$integration->get_enable_integration_option_name()
-						),
-						'placeholder' => 'Example 1, Example 2',
-					);
-
-				} elseif ( empty( $list_type->parent_id ) ) {
-
-					$options[ $option ] = array(
-						'el'          => 'select',
-						'section'     => 'integrations',
-						'options'     => $list_type->get_lists(),
-						'placeholder' => __( 'Select an option', 'newsletter-optin-box' ),
-						'label'       => sprintf(
-							// translators: %s is the integration name, %2 is the list type name.
-							__( 'Default %1$s %2$s', 'newsletter-optin-box' ),
-							$this->name,
-							$list_type->name
-						),
-						'restrict'    => sprintf(
-							'%s && %s',
-							$this->get_enable_integration_option_name(),
-							$integration->get_enable_integration_option_name()
-						),
-					);
-
-				}
-			}
-		}
-
-		return $options;
-	}
-
-	/**
 	 * Returns the settings URL.
 	 *
 	 * @return string
@@ -544,12 +481,110 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 			return;
 		}
 
-		// Fetch appropriate list.
-		$data             = $this->prepare_new_subscriber_data( $noptin_subscriber, $data );
-		$integration_data = empty( $data[ $this->slug ] ) ? array() : $data[ $this->slug ];
-		$custom_fields    = empty( $integration_data['custom_fields'] ) ? array() : $integration_data['custom_fields'];
+		// Sanitized the provided data.
+		$data = $this->prepare_new_subscriber_data( $noptin_subscriber, $data );
 
-		// TODO: Process the subscriber.
+		// Retrieve subscriber args.
+		$args = $data[ $this->slug ];
+
+		// Abort if no list was selected.
+		$selected_list = $args[ $this->get_default_list_type()->id ];
+
+		if ( empty( $selected_list ) || '-1' === $selected_list ) {
+			return;
+		}
+
+		// Custom fields.
+		if ( empty( $args['custom_fields'] ) ) {
+			$args['custom_fields'] = array();
+		}
+
+		$args['custom_fields'] = array_replace(
+			$args['custom_fields'],
+			$this->prepare_list_fields( $noptin_subscriber, $selected_list )
+		);
+
+		// Process the subscriber.
+		$this->process_contact( $noptin_subscriber->email, $args );
+	}
+
+	/**
+	 * Registers list options.
+	 *
+	 * @since 1.0.0
+	 * @param array $options
+	 * @param string $slug
+	 * @param \Noptin_Abstract_Integration $integration
+	 */
+	public function add_list_options( $options, $slug, $integration ) {
+
+		if ( 'normal' === $integration->integration_type || 'ecommerce' === $integration->integration_type ) {
+
+			$via  = str_replace( '_form', '', $slug );
+			$via .= 'ecommerce' === $integration->integration_type ? '_checkout' : '';
+
+			// Default lists.
+			foreach ( $this->list_types as $list_type ) {
+
+				$option = sanitize_text_field( "noptin_{$this->slug}_{$via}_default_{$list_type->id}" );
+
+				if ( $list_type->is_taggy ) {
+
+					$options[ $option ] = array(
+						'el'          => 'input',
+						'section'     => 'integrations',
+						'label'       => sprintf(
+							'%1$s %2$s',
+							$this->name,
+							$list_type->name_plural
+						),
+						'restrict'    => sprintf(
+							'%s && %s',
+							$this->get_enable_integration_option_name(),
+							$integration->get_enable_integration_option_name()
+						),
+						'placeholder' => 'Example 1, Example 2',
+						'description' => sprintf(
+							// translators: %s is the list type, %s is the contact type.
+							__( 'Comma separated list of %1$s to add to %2$s.', 'newsletter-optin-box' ),
+							strtolower( $list_type->name_plural ),
+							strtolower( $this->subscriber_name_plural )
+						),
+					);
+
+				} elseif ( empty( $list_type->parent_id ) ) {
+
+					$options[ $option ] = array(
+						'el'          => 'select',
+						'section'     => 'integrations',
+						'options'     => array_replace(
+							array( '-1' => __( 'None', 'newsletter-optin-box' ) ),
+							$list_type->get_lists()
+						),
+						'placeholder' => __( 'Select an option', 'newsletter-optin-box' ),
+						'label'       => sprintf(
+							'%1$s %2$s',
+							$this->name,
+							$list_type->name
+						),
+						'restrict'    => sprintf(
+							'%s && %s',
+							$this->get_enable_integration_option_name(),
+							$integration->get_enable_integration_option_name()
+						),
+						'description' => sprintf(
+							// translators: %s is the list type, %s is the contact type.
+							__( 'Select the %1$s to add %2$s to.', 'newsletter-optin-box' ),
+							strtolower( $list_type->name ),
+							strtolower( $this->subscriber_name_plural )
+						),
+					);
+
+				}
+			}
+		}
+
+		return $options;
 	}
 
 	/**
@@ -561,7 +596,7 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 	 * @return array
 	 */
 	public function prepare_new_subscriber_data( $subscriber, $data ) {
-
+		// TODO: Tag not saving.
 		// This is usually saved with the new forms.
 		delete_noptin_subscriber_meta( $subscriber->id, $this->slug );
 
@@ -577,7 +612,7 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 		// Maybe set a default list.
 		$default_type = $this->get_default_list_type();
 
-		if ( empty( $data[ $this->slug ][ $default_type->id ] ) ) {
+		if ( ! isset( $data[ $this->slug ][ $default_type->id ] ) ) {
 			$data[ $this->slug ][ $default_type->id ] = $default_type->get_default_list_id();
 		}
 
@@ -596,7 +631,7 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 
 				$value = get_noptin_option( sanitize_text_field( $option . '_' . $list_type->id ) );
 
-				if ( empty( $value ) ) {
+				if ( empty( $value ) || '-1' === $value ) {
 					continue;
 				}
 
@@ -639,6 +674,76 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Maps customer fields to subscriber fields.
+	 *
+	 * @since 1.0.0
+	 */
+	public function map_contact_to_custom_fields() {
+
+		// Loop through all available lists.
+		foreach ( $this->get_default_list_type()->get_lists() as $list_id => $list_name ) {
+
+			$custom_fields = $this->get_custom_fields( $list_id );
+
+			if ( ! empty( $custom_fields ) ) {
+
+				\Noptin_Vue::render_el(
+					"field.{$this->slug}_{$list_id}",
+					array(
+						'el'       => 'select',
+						'label'    => sprintf(
+							// translators: %s is the integration name.
+							__( '%1$s Equivalent (%2$s)', 'newsletter-optin-box' ),
+							esc_html( $this->name ),
+							esc_html( $list_name )
+						),
+						'restrict' => "field.merge_tag != 'email' && " . $this->get_enable_integration_option_name(),
+						'options'  => array_replace(
+							array(
+								'' => __( 'Not Mapped', 'newsletter-optin-box' ),
+							),
+							wp_list_pluck( $custom_fields, 'name', 'id' )
+						),
+						'normal'   => false,
+						'default'  => '',
+					)
+				);
+			}
+		}
+
+	}
+
+	/**
+	 * Fetch list fields.
+	 *
+	 * @param Noptin_Subscriber $noptin_subscriber
+	 * @param string $list_id
+	 * @since 1.0.0
+	 * @return array
+	 */
+	public function prepare_list_fields( $noptin_subscriber, $list_id ) {
+
+		$fields = array();
+		$key    = "{$this->slug}_{$list_id}";
+
+		foreach ( get_noptin_custom_fields() as $field ) {
+
+			if ( empty( $field[ $key ] ) ) {
+				continue;
+			}
+
+			$value = $noptin_subscriber->get( $field['merge_tag'] );
+
+			if ( '' !== $value ) {
+				$fields[ $field[ $key ] ] = $value;
+			}
+		}
+
+		return $fields;
+
 	}
 
 	/**
