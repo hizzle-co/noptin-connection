@@ -224,7 +224,7 @@ abstract class List_Action extends Abstract_Action {
 				if ( ! empty( $settings[ $this->list_type ] ) ) {
 					$children = $settings[ $this->list_type ];
 				}
-			} else if ( ! empty( $parent ) && ! empty( $settings[ "child_{$parent}" ] ) ) {
+			} elseif ( ! empty( $parent ) && ! empty( $settings[ "child_{$parent}" ] ) ) {
 				$children = $settings[ "child_{$parent}" ];
 			}
 		}

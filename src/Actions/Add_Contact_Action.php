@@ -3,7 +3,7 @@
 namespace Noptin\Connection\Actions;
 
 /**
- * Adds a contact to a list.
+ * Create/Update a contact.
  *
  * @version 0.0.1
  */
@@ -11,9 +11,9 @@ namespace Noptin\Connection\Actions;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Adds a contact to a list.
+ * Create/Update a contact.
  */
-abstract class Add_Contact_Action extends Abstract_Action {
+class Add_Contact_Action extends Abstract_Action {
 
 	/**
 	 * @inheritdoc
@@ -29,7 +29,7 @@ abstract class Add_Contact_Action extends Abstract_Action {
 
 		return sprintf(
 			/* Translators: %1$s provider tame, %2$s contact type. */
-			__( '%1$s > Add %2$s', 'newsletter-optin-box' ),
+			__( '%1$s > Create/Update %2$s', 'newsletter-optin-box' ),
 			$this->remote_name,
 			$this->subscriber_name
 		);
@@ -43,7 +43,7 @@ abstract class Add_Contact_Action extends Abstract_Action {
 
 		return sprintf(
 			/* Translators: %1$s provider tame, %2$s contact type. */
-			__( 'Add %1$s %2$s', 'newsletter-optin-box' ),
+			__( 'Create or Update %1$s %2$s', 'newsletter-optin-box' ),
 			$this->remote_name,
 			strtolower( $this->subscriber_name )
 		);
@@ -55,88 +55,133 @@ abstract class Add_Contact_Action extends Abstract_Action {
 	public function get_rule_description( $rule ) {
 		$settings = $rule->trigger_settings;
 
-		// Abort if days are not specified.
-		if ( empty( $settings['days'] ) ) {
+		// Abort if no list type was selected.
+		$default_list_type = $this->get_default_list_type();
+		if ( empty( $settings[ $default_list_type ] ) ) {
 			return $this->get_description();
 		}
 
-		// In cases where the lists are grouped by type.
-		if ( ! empty( $this->group_type ) ) {
+		$list_id   = $settings[ $default_list_type ];
+		$list_type = $this->get_connection()->list_types[ $default_list_type ];
+		$all_lists = $list_type->get_lists();
+		$list_name = isset( $all_lists[ $list_id ] ) ? $all_lists[ $list_id ] : $list_id;
 
-			// Abort if a group was not specified.
-			if ( empty( $settings[ $this->group_type ] ) ) {
-				return $this->get_description();
+		return sprintf(
+			'%s <p class="description">%s</p>',
+			$this->get_description(),
+			sprintf(
+				'%s: %s',
+				esc_html( $list_type->name ),
+				esc_html( $list_name )
+			)
+		);
+
+	}
+
+	/**
+	 * Retrieve the action's settings.
+	 *
+	 * @since 0.0.1
+	 * @return array
+	 */
+	public function get_settings() {
+
+		$settings          = parent::get_settings();
+		$default_list_type = $this->get_connection()->get_default_list_type();
+		$parent_lists      = $default_list_type->get_lists();
+
+		// Select main list.
+		$settings[ $default_list_type->id ] = array(
+			'el'      => 'select',
+			'label'   => $this->list_name,
+			'options' => $parent_lists,
+			'default' => $default_list_type->get_default_list_id(),
+		);
+
+		// Select child lists.
+		foreach ( $this->get_connection()->list_types as $list_type ) {
+
+			// Skip the default list type.
+			if ( $list_type->id === $default_list_type->id ) {
+				continue;
 			}
 
-			$groups     = $this->get_parents();
-			$group_id   = $settings[ $this->group_type ];
-			$group_name = isset( $groups[ $group_id ] ) ? $groups[ $group_id ] : $group_id;
+			// Skip if has parent and parent is not equal to the default list type.
+			if ( ! empty( $list_type->parent_id ) && $list_type->parent_id !== $default_list_type->id ) {
+				continue;
+			}
 
-			// Check if we have a list for this group.
-			if ( empty( $settings[ $group_id ] ) ) {
-				return sprintf(
-					'%s <p class="description">%s</p>',
-					$this->get_description(),
-					sprintf( '%s: %s', esc_html( $this->group_name ), esc_html( $group_name ) )
+			// Taggy lists do not need a parent.
+			if ( $list_type->is_taggy ) {
+				$settings[ $list_type->id ] = array(
+					'el'          => 'input',
+					'type'        => 'text',
+					'label'       => $list_type->name_plural,
+					'description' => sprintf(
+						'%s <span v-show="availableSmartTags">%s</span>',
+						sprintf(
+							// translators: %s is the plural form of the list name.
+							__( 'Enter a comma separated list of %s.', 'newsletter-optin-box' ),
+							strtolower( $list_type->name_plural )
+						),
+						sprintf(
+							/* translators: %1: Opening link, %2 closing link tag. */
+							esc_html__( 'You can use %1$ssmart tags%2$s to enter a dynamic value.', 'newsletter-optin-box' ),
+							'<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox">',
+							'</a>'
+						)
+					),
+					'default'     => '',
+					'append'      => '<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox"><span class="dashicons dashicons-shortcode"></span></a>',
 				);
+
+				continue;
 			}
 
-			$lists = $settings[ $group_id ];
+			// Child lists that are grouped by the parent list.
+			if ( ! empty( $list_type->parent_id ) ) {
 
-			if ( $this->is_taggy ) {
-				$list_names = $lists;
-				$plural     = 1 < count( noptin_parse_list( $list_names, 1 ) );
-			} else {
-				$all_lists  = $this->get_children( $group_id );
-				$list_names = array();
-
-				foreach ( noptin_parse_list( $lists, 1 ) as $list_id ) {
-					$list_names[] = isset( $all_lists[ $list_id ] ) ? $all_lists[ $list_id ] : $list_id;
+				foreach ( array_keys( $parent_lists ) as $parent_list_id ) {
+					$settings[ "child_{$list_type->id}_{$parent_list_id}" ] = array(
+						'el'       => 'multi_checkbox_alt',
+						'label'    => $list_type->name_plural,
+						'options'  => $list_type->get_lists( $parent_list_id ),
+						'restrict' => $this->get_restrict_key( $default_list_type->id ) . "=='" . esc_attr( $parent_list_id ) . "'",
+						'default'  => array(),
+					);
 				}
 
-				$plural     = 1 < count( $list_names );
-				$list_names = implode( ', ', $list_names );
+				continue;
 			}
 
-			return sprintf(
-				'%s <p class="description">%s</p>',
-				$this->get_description(),
-				sprintf(
-					'%s: %s, %s: %s',
-					esc_html( $this->group_name ),
-					esc_html( $group_name ),
-					esc_html( $plural ? $this->list_name_plural : $this->list_name ),
-					esc_html( $list_names )
-				)
-			);
-		} else {
-
-			if ( empty( $settings[ $this->list_type ] ) ) {
-				return $this->get_description();
-			}
-
-			$list = $settings[ $this->list_type ];
-
-			if ( $this->is_taggy ) {
-				$list_name = $list;
-				$plural    = 1 < count( noptin_parse_list( $list, 1 ) );
-			} else {
-				$lists     = $this->get_lists();
-				$list_name = isset( $lists[ $list ] ) ? $lists[ $list ] : $list;
-				$plural    = false;
-			}
-
-			return sprintf(
-				'%s <p class="description">%s</p>',
-				$this->get_description(),
-				sprintf(
-					'%s: %s',
-					esc_html( $plural ? $this->list_name_plural : $this->list_name ),
-					esc_html( $list_name )
-				)
+			// Child lists that are not grouped by the parent list.
+			$settings[ $list_type->id ] = array(
+				'el'      => 'multi_checkbox_alt',
+				'label'   => $list_type->name_plural,
+				'options' => $list_type->get_lists(),
+				'default' => array(),
 			);
 		}
 
+		// Set custom fields.
+		foreach ( array_keys( $parent_lists ) as $parent_list_id ) {
+			$settings = array_replace(
+				$settings,
+				$this->get_custom_field_settings( $parent_list_id, $this->get_restrict_key( $default_list_type->id ) . "=='" . esc_attr( $parent_list_id ) . "'" )
+			);
+		}
+
+		return $settings;
+	}
+
+	/**
+	 * Returns the default list type.
+	 *
+	 * @return string
+	 */
+	public function get_default_list_type() {
+		$default_list_type = $this->get_connection()->get_default_list_type();
+		return $default_list_type->id;
 	}
 
 	/**
@@ -150,43 +195,39 @@ abstract class Add_Contact_Action extends Abstract_Action {
 
 		$lists = array();
 
-		$default_list_type = $this->get_connection()->get_default_list_type();
+		$default_list_type = $this->get_default_list_type();
 
 		// Abort if default list type is not specified.
-		if ( empty( $settings[ $default_list_type->id ] ) ) {
+		if ( empty( $settings[ $default_list_type ] ) ) {
 			return $lists;
 		}
 
-		$lists[ $default_list_type->id ] = $settings[ $default_list_type->id ];
+		$lists[ $default_list_type ] = $settings[ $default_list_type ];
 
+		// Set child lists.
 		foreach ( $this->get_connection()->list_types as $list_type ) {
 
 			// Skip the default list type.
-			if ( $list_type->id === $default_list_type->id ) {
+			if ( $list_type->id === $default_list_type ) {
 				continue;
 			}
 
-			// Abort if has parent and parent is not same as default list type.
-			if ( ! empty( $list_type->parent_id ) && $list_type->parent_id !== $default_list_type->id ) {
+			// Skip if has parent and parent is not equal to the default list type.
+			if ( ! empty( $list_type->parent_id ) && $list_type->parent_id !== $default_list_type ) {
 				continue;
 			}
 
-			// Taggy lists.
-			if ( $list_type->is_taggy ) {
-				$parent = $lists[ $default_list_type->id ];
-
-				if ( ! empty( $settings[ "{{$list_type->id}_{$parent}}" ] ) ) {
-					$lists[ $list_type->id ] = $settings[ $list_type->id ];
+			if ( $list_type->is_taggy || empty( $list_type->parent_id ) ) {
+				if ( ! empty( $settings[ $list_type->id ] ) ) {
+					$lists[ $list_type->id ] = noptin_parse_list( $settings[ $list_type->id ], true );
 				}
-
 				continue;
 			}
 
-			// Normal lists.
-			if ( ! empty( $settings[ $list_type->id ] ) ) {
-				$lists[ $list_type->id ] = $settings[ $list_type->id ];
+			$key = 'child_' . $list_type->id . '_' . $settings[ $default_list_type ];
+			if ( ! empty( $settings[ $key ] ) ) {
+				$lists[ $list_type->id ] = noptin_parse_list( $settings[ $key ], true );
 			}
-
 		}
 
 		return $lists;
@@ -207,57 +248,13 @@ abstract class Add_Contact_Action extends Abstract_Action {
 			return false;
 		}
 
-		list( $group, $list ) = $this->get_list_and_group( $rule->action_settings );
+		// Abort if default list type is not specified.
+		return ! empty( $rule->action_settings[ $this->get_default_list_type() ] );
 
-		// In cases where the lists are grouped by type.
-		if ( ! empty( $this->group_type ) ) {
-			return ! empty( $group ) && ! empty( $list );
-		}
-
-		return ! empty( $list );
 	}
 
 	/**
-	 * Returns the action setting parents and children.
-	 *
-	 * @since 0.0.1
-	 * @param array $settings The action settings.
-	 * @return array
-	 */
-	public function get_list_and_group( $settings ) {
-
-		$parent   = '';
-		$children = '';
-
-		// In cases where the lists are grouped by type.
-		if ( ! empty( $this->group_type ) ) {
-
-			// Provide parent.
-			if ( ! empty( $settings[ $this->group_type ] ) ) {
-				$parent = $settings[ $this->group_type ];
-			}
-
-			// Taggy lists.
-			if ( $this->is_taggy && ! empty( $settings[ $this->list_type ] ) ) {
-				$children = $settings[ $this->list_type ];
-			}
-
-			// Check if we have a list for this group.
-			if ( ! $this->is_taggy && $parent && ! empty( $settings[ "{child_$parent}" ] ) ) {
-				$children = $settings[ "{child_$parent}" ];
-			}
-		} else {
-
-			if ( ! empty( $settings[ $this->list_type ] ) ) {
-				$children = $settings[ $this->list_type ];
-			}
-		}
-
-		return array( $parent, $children );
-	}
-
-	/**
-	 * Adds / removes a contact from a list.
+	 * Create/Update a contact
 	 *
 	 * @since 1.0.0
 	 * @param mixed $subject The subject.
@@ -267,41 +264,32 @@ abstract class Add_Contact_Action extends Abstract_Action {
 	 */
 	public function run( $subject, $rule, $args ) {
 
-		// Fetch the parent and child lists.
-		list( $group, $list ) = $this->get_list_and_group( $rule->action_settings );
-
 		// Fetch the contact email.
 		$email = $this->get_subject_email( $subject, $rule, $args );
 
-		// Should we create missing contacts?
-		$create_missing_contacts = ! empty( $rule->action_settings['create_contact'] );
+		// Prepare contact args.
+		$contact_args = array();
 
-		// Custom fields.
-		$custom_fields = array();
+		// Add selected lists.
+		foreach ( $this->get_selected_lists( $rule->action_settings ) as $list_type => $list_ids ) {
 
-		if ( $create_missing_contacts ) {
-
-			foreach ( $rule->action_settings as $key => $value ) {
-				if ( 'custom_field_' === substr( $key, 0, 13 ) ) {
-					$custom_fields[ substr( $key, 13 ) ] = $args['smart_tags']->replace_in_text_field( $value );
-				}
+			if ( is_string( $list_ids ) ) {
+				$contact_args[ $list_type ] = $args['smart_tags']->replace_in_text_field( $list_ids );
+			} else {
+				$contact_args[ $list_type ] = array_map( array( $args['smart_tags'], 'replace_in_text_field' ), $list_ids );
 			}
 		}
 
-		// Add the contact to the list.
-		$this->process( $email, $list, $group, $create_missing_contacts, $custom_fields );
+		// Custom fields.
+		$contact_args['custom_fields'] = $this->get_custom_fields(
+			$contact_args[ $this->get_default_list_type() ],
+			$rule,
+			$args
+		);
+
+		// Create / Update the contact.
+		$this->get_connection()->process_contact( $email, $contact_args );
 	}
 
-	/**
-	 * Processes a contact.
-	 *
-	 * @since 1.0.0
-	 * @param string $email The contact email.
-	 * @param string[] $lists The list IDs from which to remove the contact.
-	 * @param string $parent_id The parent list ID.
-	 * @param array $args Extra arguments.
-	 * @return void
-	 */
-	abstract protected function process( $email, $lists, $parent_id, $args = array() );
-
 }
+

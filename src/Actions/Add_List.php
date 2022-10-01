@@ -133,6 +133,7 @@ class Add_List extends List_Action {
 						)
 					),
 					'default'     => '',
+					'append'      => '<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox"><span class="dashicons dashicons-shortcode"></span></a>',
 				);
 			} else {
 
@@ -190,6 +191,7 @@ class Add_List extends List_Action {
 						)
 					),
 					'default'     => '',
+					'append'      => '<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox"><span class="dashicons dashicons-shortcode"></span></a>',
 				);
 			} else {
 

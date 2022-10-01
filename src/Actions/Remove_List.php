@@ -102,11 +102,21 @@ class Remove_List extends List_Action {
 					'type'        => 'text',
 					'label'       => $this->list_name_plural,
 					'description' => sprintf(
-						// translators: %s is the plural form of the list name.
-						__( 'Enter a comma separated list of %s.', 'newsletter-optin-box' ),
-						strtolower( $this->list_name_plural )
+						'%s <span v-show="availableSmartTags">%s</span>',
+						sprintf(
+							// translators: %s is the plural form of the list name.
+							__( 'Enter a comma separated list of %s.', 'newsletter-optin-box' ),
+							strtolower( $this->list_name_plural )
+						),
+						sprintf(
+							/* translators: %1: Opening link, %2 closing link tag. */
+							esc_html__( 'You can use %1$ssmart tags%2$s to enter a dynamic value.', 'newsletter-optin-box' ),
+							'<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox">',
+							'</a>'
+						)
 					),
 					'default'     => '',
+					'append'      => '<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox"><span class="dashicons dashicons-shortcode"></span></a>',
 				);
 			} else {
 
@@ -128,11 +138,21 @@ class Remove_List extends List_Action {
 					'type'        => 'text',
 					'label'       => $this->list_name_plural,
 					'description' => sprintf(
-						// translators: %s is the plural form of the list name.
-						__( 'Enter a comma separated list of %s.', 'newsletter-optin-box' ),
-						strtolower( $this->list_name_plural )
+						'%s <span v-show="availableSmartTags">%s</span>',
+						sprintf(
+							// translators: %s is the plural form of the list name.
+							__( 'Enter a comma separated list of %s.', 'newsletter-optin-box' ),
+							strtolower( $this->list_name_plural )
+						),
+						sprintf(
+							/* translators: %1: Opening link, %2 closing link tag. */
+							esc_html__( 'You can use %1$ssmart tags%2$s to enter a dynamic value.', 'newsletter-optin-box' ),
+							'<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox">',
+							'</a>'
+						)
 					),
 					'default'     => '',
+					'append'      => '<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox"><span class="dashicons dashicons-shortcode"></span></a>',
 				);
 			} else {
 
