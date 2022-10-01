@@ -275,8 +275,11 @@ class API_Client {
 		if ( ! empty( $this->connection ) ) {
 			/** @var Connection $connection */
 			$connection = noptin()->integrations->integrations[ $this->connection ];
-			$message    = sprintf( '[%s] %s', $connection->name, $message );
-			$connection->log( $message, $level, is_wp_error( $data ) ? $data->get_error_message() : $data );
+
+			if ( ! empty( $connection ) ) {
+				$message    = sprintf( '[%s] %s', $connection->name, $message );
+				$connection->log( $message, $level, is_wp_error( $data ) ? $data->get_error_message() : $data );
+			}
 		}
 	}
 }

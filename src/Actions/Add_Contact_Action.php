@@ -93,7 +93,7 @@ class Add_Contact_Action extends Abstract_Action {
 		// Select main list.
 		$settings[ $default_list_type->id ] = array(
 			'el'      => 'select',
-			'label'   => $this->list_name,
+			'label'   => $default_list_type->name,
 			'options' => $parent_lists,
 			'default' => $default_list_type->get_default_list_id(),
 		);

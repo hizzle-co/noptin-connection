@@ -98,6 +98,8 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 		// Integration specific settings.
 		add_filter( 'noptin_single_integration_settings', array( $this, 'add_list_options' ), $this->priority, 3 );
 
+		// Automation rules.
+		add_action( 'noptin_automation_rules_load', array( $this, 'register_automation_rules' ) );
 	}
 
 	/**
@@ -117,6 +119,26 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 	 * @return bool
 	 */
 	abstract public function is_connected();
+
+	/**
+	 * Registers automation rules.
+	 *
+	 * @param \Noptin_Automation_Rules $rules
+	 */
+	public function register_automation_rules( $rules ) {
+
+		$rules->add_action(
+			new \Noptin\Connection\Actions\Add_Contact_Action(
+				array(
+					'subscriber_name'        => $this->subscriber_name,
+					'subscriber_name_plural' => $this->subscriber_name_plural,
+					'remote_name'            => $this->name,
+					'remote_id'              => $this->slug,
+				)
+			)
+		);
+
+	}
 
 	/**
 	 * Redirect to the connection settings page on install.
