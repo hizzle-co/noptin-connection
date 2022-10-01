@@ -44,7 +44,7 @@ class Remove_List extends List_Action {
 			/* Translators: %1$s provider tame, %2$s list type. */
 			__( '%1$s > Remove From %2$s', 'newsletter-optin-box' ),
 			$this->remote_name,
-			$this->list_name
+			$this->list_name_plural
 		);
 
 	}
@@ -67,7 +67,7 @@ class Remove_List extends List_Action {
 			/* Translators: %1$s provider tame, %2$s list type. */
 			__( 'Remove from %1$s %2$s', 'newsletter-optin-box' ),
 			$this->remote_name,
-			strtolower( $this->list_name )
+			strtolower( $this->list_name_plural )
 		);
 	}
 
@@ -98,7 +98,8 @@ class Remove_List extends List_Action {
 			// Select child list.
 			if ( $this->is_taggy ) {
 				$settings[ $this->list_type ] = array(
-					'el'          => 'text',
+					'el'          => 'input',
+					'type'        => 'text',
 					'label'       => $this->list_name_plural,
 					'description' => sprintf(
 						// translators: %s is the plural form of the list name.
@@ -114,7 +115,7 @@ class Remove_List extends List_Action {
 						'el'       => 'multi_checkbox_alt',
 						'label'    => $this->list_name_plural,
 						'options'  => $this->get_children( $group_id ),
-						'restrict' => esc_attr( $this->group_type ) . "=='" . esc_attr( $group_id ) . "'",
+						'restrict' => $this->get_restrict_key( $this->group_type ) . "=='" . esc_attr( $group_id ) . "'",
 						'default'  => array(),
 					);
 				}
@@ -123,7 +124,8 @@ class Remove_List extends List_Action {
 
 			if ( $this->is_taggy ) {
 				$settings[ $this->list_type ] = array(
-					'el'          => 'text',
+					'el'          => 'input',
+					'type'        => 'text',
 					'label'       => $this->list_name_plural,
 					'description' => sprintf(
 						// translators: %s is the plural form of the list name.
@@ -138,7 +140,7 @@ class Remove_List extends List_Action {
 					'el'      => 'multi_checkbox_alt',
 					'label'   => $this->list_name,
 					'options' => $this->get_lists(),
-					'default' => $list_object->get_default_list_id(),
+					'default' => array( $list_object->get_default_list_id() ),
 				);
 			}
 		}
@@ -157,6 +159,6 @@ class Remove_List extends List_Action {
 	 * @return void
 	 */
 	protected function process( $email, $lists, $parent_id, $args = array() ) {
-		do_action( "noptin_remove_{$this->remote_id}_{$this->list_type}_contact", $email, noptin_parse_list( $lists, true ), $parent_id );
+		do_action( "noptin_remove_{$this->remote_id}_{$this->list_type}_contact", $email, $lists, $parent_id );
 	}
 }

@@ -88,14 +88,14 @@ class Add_List extends List_Action {
 			$lists = $this->get_lists();
 
 			$settings[ $this->list_type ] = array(
-				'type'    => 'select',
+				'el'      => 'select',
 				'label'   => $this->list_name,
 				'options' => $this->get_lists(),
 				'default' => $list_object->get_default_list_id(),
 			);
 
 			foreach ( array_keys( $lists ) as $id ) {
-				$settings = array_merge(
+				$settings = array_replace(
 					$settings,
 					$this->get_custom_field_settings( $id, $this->get_restrict_key( $this->list_type ) . "=='" . esc_attr( $id ) . "'" )
 				);
@@ -163,7 +163,7 @@ class Add_List extends List_Action {
 
 			// Set custom fields.
 			foreach ( array_keys( $groups ) as $id ) {
-				$settings = array_merge(
+				$settings = array_replace(
 					$settings,
 					$this->get_custom_field_settings( $id, $this->get_restrict_key( $this->group_type ) . "=='" . esc_attr( $id ) . "' && " . $this->get_restrict_key( 'create_if_not_exists' ) )
 				);
@@ -216,7 +216,11 @@ class Add_List extends List_Action {
 	 * @return void
 	 */
 	protected function process( $email, $lists, $parent_id, $args = array() ) {
-		$args[ $this->group_type ] = $parent_id;
+
+		if ( ! empty( $this->group_type ) ) {
+			$args[ $this->group_type ] = $parent_id;
+		}
+
 		do_action( "noptin_add_{$this->remote_id}_{$this->list_type}_contact", $email, $lists, $args );
 	}
 }

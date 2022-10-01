@@ -115,8 +115,14 @@ abstract class List_Action extends Abstract_Action {
 				$plural    = 1 < count( noptin_parse_list( $lists, 1 ) );
 			} else {
 				$all_lists = $this->get_lists();
-				$list_name = isset( $all_lists[ $lists ] ) ? $all_lists[ $lists ] : $lists;
-				$plural    = false;
+				$list_name = array();
+
+				foreach ( noptin_parse_list( $lists ) as $list_id ) {
+					$list_name[] = isset( $all_lists[ $list_id ] ) ? $all_lists[ $list_id ] : $list_id;
+				}
+
+				$plural    = 1 < count( $list_name );
+				$list_name = implode( ', ', $list_name );
 			}
 
 			return sprintf(
@@ -253,15 +259,7 @@ abstract class List_Action extends Abstract_Action {
 		$create_if_not_exists = ! empty( $rule->action_settings['create_if_not_exists'] );
 
 		// Custom fields.
-		$custom_fields = array();
-		$prefix        = empty( $group ) && is_scalar( $group ) ? 'custom_field_' : "custom_field_{$group}_";
-		$prefix_length = strlen( $prefix );
-
-		foreach ( $rule->action_settings as $key => $value ) {
-			if ( substr( $key, 0, $prefix_length === $prefix ) ) {
-				$custom_fields[ substr( $key, $prefix_length ) ] = $args['smart_tags']->replace_in_text_field( $value );
-			}
-		}
+		$custom_fields = $this->get_custom_fields( empty( $group ) ? current( $list ) : $group, $rule, $args );
 
 		// Add the contact to the list.
 		$this->process( $email, $list, $group, compact( 'create_if_not_exists', 'custom_fields' ) );

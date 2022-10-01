@@ -152,7 +152,7 @@ abstract class List_Type {
 	 */
 	public function filter_lists( $lists, $parent_id ) {
 		$parent_id = is_string( $parent_id ) ? trim( $parent_id ) : '';
-		return array_merge( (array) $lists, $this->get_lists( $parent_id ) );
+		return array_replace( $this->get_lists( $parent_id ), (array) $lists );
 	}
 
 	/**

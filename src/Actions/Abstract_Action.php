@@ -66,11 +66,25 @@ abstract class Abstract_Action extends \Noptin_Abstract_Action {
 	 */
 	protected function get_custom_field_settings( $list_id, $restrict = '' ) {
 
-		$settings = array();
-		$_list_id = empty( $list_id ) ? 'default' : $list_id;
-		$prefix   = "custom_field_{$_list_id}_";
+		$settings      = array();
+		$_list_id      = empty( $list_id ) ? 'default' : $list_id;
+		$prefix        = "custom_field_{$_list_id}_";
+		$custom_fields = $this->get_connection()->get_custom_fields( $list_id );
 
-		foreach ( $this->get_connection()->get_custom_fields( $list_id ) as $custom_field ) {
+		if ( empty( $custom_fields ) ) {
+			return $settings;
+		}
+
+		$settings[ $this->remote_id . '_map_custom_fields_heading' ] = array(
+			'el'      => 'hero',
+			'content' => sprintf(
+				/* translators: %s: The remote name. */
+				__( 'Map %s custom fields', 'newsletter-optin-box' ),
+				$this->remote_name
+			),
+		);
+
+		foreach ( $custom_fields as $custom_field ) {
 
 			$settings[ "{$prefix}{$custom_field->id}" ] = array(
 				'type'        => 'text',
@@ -78,6 +92,11 @@ abstract class Abstract_Action extends \Noptin_Abstract_Action {
 				'label'       => $custom_field->name,
 				'description' => $custom_field->description,
 				'default'     => $custom_field->default,
+				'placeholder' => sprintf(
+					/* translators: %s: The field name. */
+					__( 'Enter %s', 'newsletter-optin-box' ),
+					$custom_field->name
+				),
 				'description' => sprintf(
 					'%s<p class="description" v-show="availableSmartTags">%s</p>',
 					wp_kses_post( $custom_field->description ),
@@ -88,6 +107,7 @@ abstract class Abstract_Action extends \Noptin_Abstract_Action {
 						'</a>'
 					)
 				),
+				'append'      => '<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox"><span class="dashicons dashicons-shortcode"></span></a>',
 				'restrict'    => $restrict,
 			);
 
