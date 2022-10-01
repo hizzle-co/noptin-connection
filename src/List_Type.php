@@ -116,18 +116,7 @@ abstract class List_Type {
      *
      */
     public function empty_cache() {
-		global $wpdb;
-
-		$cache_key = $this->get_cache_key();
-		delete_transient( $cache_key );
-
-		$wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s;",
-				$wpdb->esc_like( $cache_key ) . '%'
-			)
-		);
-
+		delete_transient( $this->get_cache_key() );
 	}
 
 	/**

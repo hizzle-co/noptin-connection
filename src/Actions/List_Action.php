@@ -240,26 +240,31 @@ abstract class List_Action extends Abstract_Action {
 		// Fetch the parent and child lists.
 		list( $group, $list ) = $this->get_list_and_group( $rule->action_settings );
 
+		// Convert list to array.
+		$list = noptin_parse_list( $list, true );
+
+		// Handle list smart tags.
+		$list = array_map( array( $args['smart_tags'], 'replace_in_text_field' ), $list );
+
 		// Fetch the contact email.
 		$email = $this->get_subject_email( $subject, $rule, $args );
 
 		// Should we create missing contacts?
-		$create_missing_contacts = ! empty( $rule->action_settings['create_contact'] );
+		$create_if_not_exists = ! empty( $rule->action_settings['create_if_not_exists'] );
 
 		// Custom fields.
 		$custom_fields = array();
+		$prefix        = empty( $group ) && is_scalar( $group ) ? 'custom_field_' : "custom_field_{$group}_";
+		$prefix_length = strlen( $prefix );
 
-		if ( $create_missing_contacts ) {
-
-			foreach ( $rule->action_settings as $key => $value ) {
-				if ( 'custom_field_' === substr( $key, 0, 13 ) ) {
-					$custom_fields[ substr( $key, 13 ) ] = $args['smart_tags']->replace_in_text_field( $value );
-				}
+		foreach ( $rule->action_settings as $key => $value ) {
+			if ( substr( $key, 0, $prefix_length === $prefix ) ) {
+				$custom_fields[ substr( $key, $prefix_length ) ] = $args['smart_tags']->replace_in_text_field( $value );
 			}
 		}
 
 		// Add the contact to the list.
-		$this->process( $email, $list, $group, $create_missing_contacts, $custom_fields );
+		$this->process( $email, $list, $group, compact( 'create_if_not_exists', 'custom_fields' ) );
 	}
 
 	/**

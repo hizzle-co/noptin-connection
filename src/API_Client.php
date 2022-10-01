@@ -104,7 +104,7 @@ class API_Client {
 	protected function request( $method, $resource, $data = array() ) {
 		$this->reset();
 
-		$this->log( "Sending a {$method} request to {$resource}", 'info', array( 'backtrace' => wp_debug_backtrace_summary() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		$this->log( "Sending a {$method} request to {$resource}", 'info', $data );
 
 		if ( 'https://' !== substr( $resource, 0, 8 ) ) {
 			$url = trailingslashit( $this->base_url ) . ltrim( $resource, '/' );
@@ -144,7 +144,7 @@ class API_Client {
 		try {
 			$parsed_response = $this->parse_response( $response );
 		} catch ( \Exception $e ) {
-			$this->log( $e->getMessage(), 'error', $response );
+			$this->log( $e->getMessage(), 'error' );
 			throw $e;
 		}
 
@@ -269,14 +269,14 @@ class API_Client {
 	 * @param string $message Log message.
 	 * @param string $level Optional. Default 'info'. Possible values:
 	 *                      emergency|alert|critical|error|warning|notice|info|debug.
-	 * @param array  $data  Optional. Extra error data. Default empty array.
+	 * @param array|\WP_Error  $data  Optional. Extra error data. Default empty array.
 	 */
 	public function log( $message, $level = 'info', $data = array() ) {
 		if ( ! empty( $this->connection ) ) {
 			/** @var Connection $connection */
 			$connection = noptin()->integrations->integrations[ $this->connection ];
 			$message    = sprintf( '[%s] %s', $connection->name, $message );
-			$connection->log( $message, $level, $data );
+			$connection->log( $message, $level, is_wp_error( $data ) ? $data->get_error_message() : $data );
 		}
 	}
 }
