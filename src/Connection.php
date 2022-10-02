@@ -86,6 +86,10 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 
 		// Register integration.
 		add_filter( 'noptin_connection_integrations', array( $this, 'register' ), $this->priority );
+		add_filter( 'noptin_upsell_integrations', '__return_false', $this->priority );
+
+		// Forms.
+		add_action( 'noptin_form_available_integration_settings', array( $this, 'display_form_options' ), $this->priority );
 
 		// Abort if the connection is not enabled.
 		if ( ! $this->is_connected() ) {
@@ -511,6 +515,16 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 	}
 
 	/**
+	 * Displays form options.
+	 *
+	 * @param \Noptin_Form $form
+	 */
+	public function display_form_options( $form ) {
+		$integration = $this;
+		include plugin_dir_path( __FILE__ ) . 'views/form-options.php';
+	}
+
+	/**
 	 * Registers list options.
 	 *
 	 * @since 1.0.0
@@ -646,10 +660,27 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 			return $data;
 		}
 
+		// New type forms.
 		if ( ! is_legacy_noptin_form( absint( $form ) ) ) {
+
+			$form = noptin_get_optin_form( absint( $form ) );
+
+			foreach ( $form->settings as $key => $value ) {
+
+				// Check if key begins with the integration slug.
+				if ( 0 !== strpos( $key, $this->slug ) ) {
+					continue;
+				}
+
+				// Remove the integration slug.
+				$key                         = str_replace( $this->slug . '_', '', $key );
+				$data[ $this->slug ][ $key ] = $value;
+			}
+
 			return $data;
 		}
 
+		// Legacy forms.
 		$form = absint( $form );
 		$form = noptin_get_optin_form( $form );
 
