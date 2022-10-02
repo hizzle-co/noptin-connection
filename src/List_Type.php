@@ -132,16 +132,16 @@ abstract class List_Type {
 	/**
 	 * Returns the default list ID.
 	 *
-	 * @return string|false
+	 * @return string
 	 */
 	public function get_default_list_id() {
-		$default_value = get_noptin_option( "noptin_{$this->connection->slug}_default_{$this->id}" );
+		$default_value = get_noptin_option( "noptin_{$this->connection->slug}_default_{$this->id}", '' );
 
 		if ( empty( $default_value ) && ! $this->is_taggy && empty( $this->parent_id ) ) {
 			$default_value = current( array_keys( $this->get_lists() ) );
 		}
 
-		return empty( $default_value ) ? false : $default_value;
+		return empty( $default_value ) ? '' : $default_value;
 	}
 
 	/**

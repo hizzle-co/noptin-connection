@@ -108,6 +108,11 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 
 		// Map subscriber fields to customer fields.
 		add_action( 'noptin_custom_field_settings', array( $this, 'map_contact_to_custom_fields' ), $this->priority );
+
+		// Legacy forms.
+		add_filter( 'noptin_optin_form_default_form_state', array( $this, 'add_custom_state_to_legacy_forms' ), $this->priority );
+		add_filter( 'default_noptin_shortcode_atts', array( $this, 'add_custom_state_to_legacy_forms' ), $this->priority );
+		add_filter( 'noptin_optin_form_editor_sidebar_section', array( $this, 'add_custom_fields_to_legacy_forms_editor' ), $this->priority );
 	}
 
 	/**
@@ -526,6 +531,121 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 	}
 
 	/**
+	 * Adds custom state to the legacy form builder.
+	 *
+	 * @param array $defaults
+	 * @return array
+	 */
+	public function add_custom_state_to_legacy_forms( $defaults ) {
+
+		foreach ( $this->list_types as $list_type ) {
+			$defaults[ "{$this->slug}_{$list_type->id}" ] = $list_type->get_default_list_id();
+		}
+
+		return $defaults;
+	}
+
+	/**
+	 * Adds custom settings to legacy forms builder.
+	 *
+	 * @param array $settings
+	 * @return array
+	 */
+	public function add_custom_fields_to_legacy_forms_editor( $settings ) {
+
+		// Abort early if we're not connected.
+		if ( ! $this->is_connected() ) {
+
+			// Connection error.
+			$error = $this->last_error;
+
+			if ( empty( $error ) ) {
+				$error = sprintf(
+					// translators: %s is the name of the integration.
+					__( 'You are not connected to %s', 'newsletter-optin-box' ),
+					$this->name
+				);
+			}
+
+			$settings['integrations'][ $this->slug ] = array(
+				'el'       => 'panel',
+				'title'    => $this->name,
+				'id'       => $this->slug,
+				'open'     => true,
+				'children' => array(
+					"{$this->slug}_text" => array(
+						'el'      => 'paragraph',
+						'content' => "Error: $error",
+						'style'   => 'color:#F44336;',
+					),
+				),
+			);
+
+			return $settings;
+		}
+
+		$custom = array();
+
+		// Default lists.
+		foreach ( $this->list_types as $list_type ) {
+
+			$option = "{$this->slug}_{$list_type->id}";
+
+			if ( $list_type->is_taggy ) {
+
+				$custom[ $option ] = array(
+					'el'          => 'input',
+					'label'       => sprintf(
+						'%1$s %2$s',
+						$this->name,
+						$list_type->name_plural
+					),
+					'placeholder' => 'Example 1, Example 2',
+					'tooltip'     => sprintf(
+						// translators: %s is the list type, %s is the contact type.
+						__( 'Comma separated list of %1$s to add to %2$s.', 'newsletter-optin-box' ),
+						strtolower( $list_type->name_plural ),
+						strtolower( $this->subscriber_name_plural )
+					),
+				);
+
+			} elseif ( empty( $list_type->parent_id ) ) {
+
+				$custom[ $option ] = array(
+					'el'          => 'select',
+					'options'     => array_replace(
+						array( '-1' => __( 'None', 'newsletter-optin-box' ) ),
+						$list_type->get_lists()
+					),
+					'placeholder' => __( 'Select an option', 'newsletter-optin-box' ),
+					'label'       => sprintf(
+						'%1$s %2$s',
+						$this->name,
+						$list_type->name
+					),
+					'tooltip'     => sprintf(
+						// translators: %s is the list type, %s is the contact type.
+						__( 'Select the %1$s to add %2$s to.', 'newsletter-optin-box' ),
+						strtolower( $list_type->name ),
+						strtolower( $this->subscriber_name_plural )
+					),
+				);
+
+			}
+		}
+
+		$settings['integrations'][ $this->slug ] = array(
+			'el'       => 'panel',
+			'title'    => $this->name,
+			'id'       => $this->slug,
+			'open'     => true,
+			'children' => $custom,
+		);
+
+		return $settings;
+	}
+
+	/**
 	 * Registers list options.
 	 *
 	 * @since 1.0.0
@@ -684,17 +804,16 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 
 		// Loop through all list types.
 		foreach ( $this->list_types as $list_type ) {
+			$value = $form->__get( "{$this->slug}_{$list_type->id}" );
 
-			$list_type_id = sanitize_key( $list_type->id );
-
-			if ( empty( $form->$list_type_id ) ) {
+			if ( empty( $value ) ) {
 				continue;
 			}
 
 			if ( $list_type->is_taggy ) {
-				$data[ $this->slug ][ $list_type->id ] = noptin_parse_list( $form->$list_type_id, true );
+				$data[ $this->slug ][ $list_type->id ] = noptin_parse_list( $value, true );
 			} else {
-				$data[ $this->slug ][ $list_type->id ] = $form->$list_type_id;
+				$data[ $this->slug ][ $list_type->id ] = $value;
 			}
 		}
 
@@ -881,6 +1000,12 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 	public function log( $message, $level = 'info', $data = array() ) {
 
 		if ( $this->is_debug_mode() ) {
+
+			if ( is_array( $level ) ) {
+				$data  = $level;
+				$level = 'info';
+			}
+
 			$context = array(
 				'connection' => $this->name,
 				'module'     => 'noptin-connection',
