@@ -98,6 +98,7 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 
 		// New subscribers.
 		add_action( 'noptin_insert_subscriber', array( $this, 'add_contact' ), $this->priority, 2 );
+		add_filter( 'noptin_submitted_data_add_connections', array( $this, 'add_connection_details_to_submitted' ), $this->priority, 2 );
 
 		// Integration specific settings.
 		add_filter( 'noptin_single_integration_settings', array( $this, 'add_list_options' ), $this->priority, 3 );
@@ -625,10 +626,12 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 		}
 
 		// Maybe set a default list.
-		$default_type = $this->get_default_list_type();
+		$default_type    = $this->get_default_list_type();
+		$is_default_list = false;
 
 		if ( ! isset( $data[ $this->slug ][ $default_type->id ] ) ) {
 			$data[ $this->slug ][ $default_type->id ] = $default_type->get_default_list_id();
+			$is_default_list = true;
 		}
 
 		// Fetch lists, tags, etc from the sign-up method.
@@ -650,6 +653,11 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 					continue;
 				}
 
+				// Abort if this is already set.
+				if ( isset( $data[ $this->slug ][ $list_type->id ] ) && ( $list_type->id !== $default_type->id || ! $is_default_list ) ) {
+					continue;
+				}
+
 				if ( $list_type->is_taggy ) {
 					$data[ $this->slug ][ $list_type->id ] = noptin_parse_list( $value, true );
 				} else {
@@ -660,23 +668,8 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 			return $data;
 		}
 
-		// New type forms.
+		// New type forms are preprocessed.
 		if ( ! is_legacy_noptin_form( absint( $form ) ) ) {
-
-			$form = noptin_get_optin_form( absint( $form ) );
-
-			foreach ( $form->settings as $key => $value ) {
-
-				// Check if key begins with the integration slug.
-				if ( 0 !== strpos( $key, $this->slug ) ) {
-					continue;
-				}
-
-				// Remove the integration slug.
-				$key                         = str_replace( $this->slug . '_', '', $key );
-				$data[ $this->slug ][ $key ] = $value;
-			}
-
 			return $data;
 		}
 
@@ -703,6 +696,31 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 			} else {
 				$data[ $this->slug ][ $list_type->id ] = $form->$list_type_id;
 			}
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Processes submitted connection data.
+	 */
+	public function add_connection_details_to_submitted( $data, $submitted ) {
+
+		if ( empty( $data[ $this->slug ] ) ) {
+			$data[ $this->slug ] = array();
+		}
+
+		foreach ( $submitted as $key => $value ) {
+
+			// Check if key begins with the integration slug.
+			if ( 0 !== strpos( $key, $this->slug ) ) {
+				continue;
+			}
+
+			// Remove the integration slug.
+			$key = str_replace( $this->slug . '_', '', $key );
+
+			$data[ $this->slug ][ $key ] = $value;
 		}
 
 		return $data;
