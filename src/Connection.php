@@ -93,7 +93,7 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 		}
 
 		// New subscribers.
-		add_action( 'noptin_insert_subscriber', array( $this, 'add_subscriber' ), $this->priority, 2 );
+		add_action( 'noptin_insert_subscriber', array( $this, 'add_contact' ), $this->priority, 2 );
 
 		// Integration specific settings.
 		add_filter( 'noptin_single_integration_settings', array( $this, 'add_list_options' ), $this->priority, 3 );
@@ -471,9 +471,11 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 	/**
 	 * Adds a new Noptin subscriber to the remote connection.
 	 *
+	 * @param id $subscriber_id The noptin subscriber ID.
+	 * @param array $data The noptin subscriber data.
 	 * @since 1.0.0
 	 */
-	public function add_subscriber( $subscriber_id, $data = array() ) {
+	public function add_contact( $subscriber_id, $data = array() ) {
 
 		// Retrieve the Noptin subscriber.
 		$noptin_subscriber = new \Noptin_Subscriber( $subscriber_id );
@@ -596,7 +598,6 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 	 * @return array
 	 */
 	public function prepare_new_subscriber_data( $subscriber, $data ) {
-		// TODO: Tag not saving.
 		// This is usually saved with the new forms.
 		delete_noptin_subscriber_meta( $subscriber->id, $this->slug );
 
@@ -629,7 +630,7 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 			// Loop through all list types.
 			foreach ( $this->list_types as $list_type ) {
 
-				$value = get_noptin_option( sanitize_text_field( $option . '_' . $list_type->id ) );
+				$value = get_noptin_option( sanitize_text_field( $option . $list_type->id ) );
 
 				if ( empty( $value ) || '-1' === $value ) {
 					continue;
