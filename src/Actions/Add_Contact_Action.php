@@ -87,7 +87,8 @@ class Add_Contact_Action extends Abstract_Action {
 	public function get_settings() {
 
 		$settings          = parent::get_settings();
-		$default_list_type = $this->get_connection()->get_default_list_type();
+		$connection        = $this->get_connection();
+		$default_list_type = $connection->get_default_list_type();
 		$parent_lists      = $default_list_type->get_lists();
 
 		// Select main list.
@@ -99,7 +100,7 @@ class Add_Contact_Action extends Abstract_Action {
 		);
 
 		// Select child lists.
-		foreach ( $this->get_connection()->list_types as $list_type ) {
+		foreach ( $connection->list_types as $list_type ) {
 
 			// Skip the default list type.
 			if ( $list_type->id === $default_list_type->id ) {
@@ -171,6 +172,20 @@ class Add_Contact_Action extends Abstract_Action {
 			);
 		}
 
+		// Map custom fields.
+		if ( $connection->has_universal_fields ) {
+			$settings = array_replace(
+				$settings,
+				$this->get_custom_field_settings( '' )
+			);
+		} else {
+			foreach ( array_keys( $parent_lists ) as $parent_list_id ) {
+				$settings = array_replace(
+					$settings,
+					$this->get_custom_field_settings( $parent_list_id, $this->get_restrict_key( $default_list_type->id ) . "=='" . esc_attr( $parent_list_id ) . "'" )
+				);
+			}
+		}
 		return $settings;
 	}
 

@@ -56,6 +56,11 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 	public $subscriber_name_plural;
 
 	/**
+	 * @var bool Does this connection have universal fields?
+	 */
+	public $has_universal_fields = false;
+
+	/**
      * Initializes the connection.
      */
     public function before_initialize() {
@@ -68,6 +73,7 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 
 		// Debug mode.
 		if ( $this->is_debug_mode() ) {
+			\Hizzle\Logger\Logger::get_instance();
 			add_filter( 'hizzle_logger_admin_show_menu', '__return_true' );
 		}
 
@@ -852,35 +858,59 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 	 */
 	public function map_contact_to_custom_fields() {
 
+		// Check if this integration uses universal custom fields.
+		if ( $this->has_universal_fields ) {
+			return $this->map_custom_fields_settings( $this->get_custom_fields( false ), "field.{$this->slug}" );
+		}
+
 		// Loop through all available lists.
 		foreach ( $this->get_default_list_type()->get_lists() as $list_id => $list_name ) {
+			$this->map_contact_to_custom_fields(
+				$this->get_custom_fields( $list_id ),
+				"field.{$this->slug}_{$list_id}",
+				$list_name
+			);
+		}
 
-			$custom_fields = $this->get_custom_fields( $list_id );
+	}
 
-			if ( ! empty( $custom_fields ) ) {
+	/**
+	 * Maps customer fields to subscriber fields.
+	 *
+	 * @param Custom_Field[] $custom_fields The custom fields.
+	 * @param string         $option_id The option id.
+	 * @param string         $list_name The list name.
+	 * @since 1.0.0
+	 */
+	private function map_custom_fields_settings( $custom_fields, $option_id, $list_name = false ) {
 
-				\Noptin_Vue::render_el(
-					"field.{$this->slug}_{$list_id}",
-					array(
-						'el'       => 'select',
-						'label'    => sprintf(
-							// translators: %s is the integration name.
-							__( '%1$s Equivalent (%2$s)', 'newsletter-optin-box' ),
-							esc_html( $this->name ),
-							esc_html( $list_name )
+		if ( ! empty( $custom_fields ) ) {
+
+			\Noptin_Vue::render_el(
+				$option_id,
+				array(
+					'el'       => 'select',
+					'label'    => $list_name ? sprintf(
+						// translators: %s is the integration name.
+						__( '%1$s Equivalent (%2$s)', 'newsletter-optin-box' ),
+						esc_html( $this->name ),
+						esc_html( $list_name )
+					) : sprintf(
+						// translators: %s is the integration name.
+						__( '%s Equivalent', 'newsletter-optin-box' ),
+						esc_html( $this->name )
+					),
+					'restrict' => "field.merge_tag != 'email' && " . $this->get_enable_integration_option_name(),
+					'options'  => array_replace(
+						array(
+							'' => __( 'Not Mapped', 'newsletter-optin-box' ),
 						),
-						'restrict' => "field.merge_tag != 'email' && " . $this->get_enable_integration_option_name(),
-						'options'  => array_replace(
-							array(
-								'' => __( 'Not Mapped', 'newsletter-optin-box' ),
-							),
-							wp_list_pluck( $custom_fields, 'name', 'id' )
-						),
-						'normal'   => false,
-						'default'  => '',
-					)
-				);
-			}
+						wp_list_pluck( $custom_fields, 'name', 'id' )
+					),
+					'normal'   => false,
+					'default'  => '',
+				)
+			);
 		}
 
 	}
@@ -896,7 +926,7 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 	public function prepare_list_fields( $noptin_subscriber, $list_id ) {
 
 		$fields = array();
-		$key    = "{$this->slug}_{$list_id}";
+		$key    = $this->has_universal_fields ? $this->slug : "{$this->slug}_{$list_id}";
 
 		foreach ( get_noptin_custom_fields() as $field ) {
 

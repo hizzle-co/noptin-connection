@@ -80,8 +80,9 @@ class Add_List extends List_Action {
 	public function get_settings() {
 
 		$settings          = parent::get_settings();
-		$default_list_type = $this->get_connection()->get_default_list_type();
-		$list_object       = $this->get_connection()->list_types[ $this->list_type ];
+		$connection        = $this->get_connection();
+		$default_list_type = $connection->get_default_list_type();
+		$list_object       = $connection->list_types[ $this->list_type ];
 
 		// If default list type, add setting to select a single list.
 		if ( $default_list_type->id === $this->list_type ) {
@@ -94,11 +95,19 @@ class Add_List extends List_Action {
 				'default' => $list_object->get_default_list_id(),
 			);
 
-			foreach ( array_keys( $lists ) as $id ) {
+			// Map custom fields.
+			if ( $connection->has_universal_fields ) {
 				$settings = array_replace(
 					$settings,
-					$this->get_custom_field_settings( $id, $this->get_restrict_key( $this->list_type ) . "=='" . esc_attr( $id ) . "'" )
+					$this->get_custom_field_settings( '' )
 				);
+			} else {
+				foreach ( array_keys( $lists ) as $id ) {
+					$settings = array_replace(
+						$settings,
+						$this->get_custom_field_settings( $id, $this->get_restrict_key( $this->list_type ) . "=='" . esc_attr( $id ) . "'" )
+					);
+				}
 			}
 		} elseif ( ! empty( $this->group_type ) ) { // Child lists that are grouped by the parent list.
 			$groups       = $this->get_parents();
@@ -162,12 +171,19 @@ class Add_List extends List_Action {
                 'default'     => true,
 			);
 
-			// Set custom fields.
-			foreach ( array_keys( $groups ) as $id ) {
+			// Map custom fields.
+			if ( $connection->has_universal_fields ) {
 				$settings = array_replace(
 					$settings,
-					$this->get_custom_field_settings( $id, $this->get_restrict_key( $this->group_type ) . "=='" . esc_attr( $id ) . "' && " . $this->get_restrict_key( 'create_if_not_exists' ) )
+					$this->get_custom_field_settings( '', $this->get_restrict_key( 'create_if_not_exists' ) )
 				);
+			} else {
+				foreach ( array_keys( $groups ) as $id ) {
+					$settings = array_replace(
+						$settings,
+						$this->get_custom_field_settings( $id, $this->get_restrict_key( $this->group_type ) . "=='" . esc_attr( $id ) . "' && " . $this->get_restrict_key( 'create_if_not_exists' ) )
+					);
+				}
 			}
 		} else { // Child lists that are not grouped by the parent list.
 

@@ -68,8 +68,9 @@ abstract class Abstract_Action extends \Noptin_Abstract_Action {
 
 		$settings      = array();
 		$_list_id      = empty( $list_id ) ? 'default' : $list_id;
-		$prefix        = "custom_field_{$_list_id}_";
-		$custom_fields = $this->get_connection()->get_custom_fields( $list_id );
+		$connection    = $this->get_connection();
+		$prefix        = $connection->has_universal_fields ? 'custom_field_' : "custom_field_{$_list_id}_";
+		$custom_fields = $connection->get_custom_fields( $list_id );
 
 		if ( empty( $custom_fields ) ) {
 			return $settings;
@@ -138,7 +139,8 @@ abstract class Abstract_Action extends \Noptin_Abstract_Action {
 
 		$custom_fields = array();
 		$list_id       = empty( $list_id ) ? 'default' : $list_id;
-		$prefix        = "custom_field_{$list_id}_";
+		$connection    = $this->get_connection();
+		$prefix        = $connection->has_universal_fields ? 'custom_field_' : "custom_field_{$list_id}_";
 		$prefix_length = strlen( $prefix );
 
 		foreach ( $rule->action_settings as $key => $value ) {
