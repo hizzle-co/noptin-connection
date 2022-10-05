@@ -77,12 +77,13 @@ abstract class Abstract_Action extends \Noptin_Abstract_Action {
 		}
 
 		$settings[ $this->remote_id . '_map_custom_fields_heading' ] = array(
-			'el'      => 'hero',
-			'content' => sprintf(
-				/* translators: %s: The remote name. */
-				__( 'Map %s custom fields', 'newsletter-optin-box' ),
-				$this->remote_name
+			'el'       => 'hero',
+			'content'  => sprintf(
+				/* translators: %s: The subscriber type. */
+				__( 'Map %s fields', 'newsletter-optin-box' ),
+				strtolower( $this->subscriber_name )
 			),
+			'restrict' => $restrict,
 		);
 
 		foreach ( $custom_fields as $custom_field ) {

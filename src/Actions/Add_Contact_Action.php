@@ -91,94 +91,132 @@ class Add_Contact_Action extends Abstract_Action {
 		$default_list_type = $connection->get_default_list_type();
 		$parent_lists      = $default_list_type->get_lists();
 
-		// Select main list.
-		$settings[ $default_list_type->id ] = array(
-			'el'      => 'select',
-			'label'   => $default_list_type->name,
-			'options' => $parent_lists,
-			'default' => $default_list_type->get_default_list_id(),
-		);
+		// If the connection supports universal contacts...
+		if ( $connection->has_universal_contacts ) {
 
-		// Select child lists.
-		foreach ( $connection->list_types as $list_type ) {
-
-			// Skip the default list type.
-			if ( $list_type->id === $default_list_type->id ) {
-				continue;
-			}
-
-			// Skip if has parent and parent is not equal to the default list type.
-			if ( ! empty( $list_type->parent_id ) && $list_type->parent_id !== $default_list_type->id ) {
-				continue;
-			}
-
-			// Taggy lists do not need a parent.
-			if ( $list_type->is_taggy ) {
-				$settings[ $list_type->id ] = array(
-					'el'          => 'input',
-					'type'        => 'text',
-					'label'       => $list_type->name_plural,
-					'description' => sprintf(
-						'%s <span v-show="availableSmartTags">%s</span>',
-						sprintf(
-							// translators: %s is the plural form of the list name.
-							__( 'Enter a comma separated list of %s.', 'newsletter-optin-box' ),
-							strtolower( $list_type->name_plural )
+			foreach ( $connection->list_types as $list_type ) {
+				if ( $list_type->is_taggy ) {
+					$settings[ $list_type->id ] = array(
+						'el'          => 'input',
+						'type'        => 'text',
+						'label'       => $list_type->name_plural,
+						'description' => sprintf(
+							'%s <span v-show="availableSmartTags">%s</span>',
+							sprintf(
+								// translators: %1 is the plural form of the list type, %2 is the contact type.
+								__( 'Optional. Enter a comma separated list of %1$s to assign new %2$s.', 'newsletter-optin-box' ),
+								strtolower( $list_type->name_plural ),
+								strtolower( $this->subscriber_name_plural )
+							),
+							sprintf(
+								/* translators: %1: Opening link, %2 closing link tag. */
+								esc_html__( 'You can use %1$ssmart tags%2$s to enter a dynamic value.', 'newsletter-optin-box' ),
+								'<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox">',
+								'</a>'
+							)
 						),
-						sprintf(
-							/* translators: %1: Opening link, %2 closing link tag. */
-							esc_html__( 'You can use %1$ssmart tags%2$s to enter a dynamic value.', 'newsletter-optin-box' ),
-							'<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox">',
-							'</a>'
-						)
-					),
-					'default'     => '',
-					'append'      => '<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox"><span class="dashicons dashicons-shortcode"></span></a>',
-				);
+						'default'     => '',
+						'append'      => '<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox"><span class="dashicons dashicons-shortcode"></span></a>',
+					);
+				} else {
 
-				continue;
-			}
-
-			// Child lists that are grouped by the parent list.
-			if ( ! empty( $list_type->parent_id ) ) {
-
-				foreach ( array_keys( $parent_lists ) as $parent_list_id ) {
-					$settings[ "child_{$list_type->id}_{$parent_list_id}" ] = array(
-						'el'       => 'multi_checkbox_alt',
-						'label'    => $list_type->name_plural,
-						'options'  => $list_type->get_lists( $parent_list_id ),
-						'restrict' => $this->get_restrict_key( $default_list_type->id ) . "=='" . esc_attr( $parent_list_id ) . "'",
-						'default'  => array(),
+					$settings[ $list_type->id ] = array(
+						'el'          => 'multi_checkbox_alt',
+						'label'       => $list_type->name_plural,
+						'options'     => $list_type->get_lists(),
+						'default'     => array(),
+						'description' => sprintf(
+							// translators: %1 is the plural form of the list type, %2 is the contact type.
+							__( 'Optional. Select any %1$s to add new %2$s to.', 'newsletter-optin-box' ),
+							strtolower( $list_type->name_plural ),
+							strtolower( $this->subscriber_name_plural )
+						),
 					);
 				}
-
-				continue;
 			}
+		} else {
 
-			// Child lists that are not grouped by the parent list.
-			$settings[ $list_type->id ] = array(
-				'el'      => 'multi_checkbox_alt',
-				'label'   => $list_type->name_plural,
-				'options' => $list_type->get_lists(),
-				'default' => array(),
+			// Select main list.
+			$settings[ $default_list_type->id ] = array(
+				'el'      => 'select',
+				'label'   => $default_list_type->name,
+				'options' => $parent_lists,
+				'default' => $default_list_type->get_default_list_id(),
 			);
+
+			// Select child lists.
+			foreach ( $connection->list_types as $list_type ) {
+
+				// Skip the default list type.
+				if ( $list_type->id === $default_list_type->id ) {
+					continue;
+				}
+
+				// Skip if has parent and parent is not equal to the default list type.
+				if ( ! empty( $list_type->parent_id ) && $list_type->parent_id !== $default_list_type->id ) {
+					continue;
+				}
+
+				// Taggy lists do not need a parent.
+				if ( $list_type->is_taggy ) {
+					$settings[ $list_type->id ] = array(
+						'el'          => 'input',
+						'type'        => 'text',
+						'label'       => $list_type->name_plural,
+						'description' => sprintf(
+							'%s <span v-show="availableSmartTags">%s</span>',
+							sprintf(
+								// translators: %s is the plural form of the list name.
+								__( 'Enter a comma separated list of %s.', 'newsletter-optin-box' ),
+								strtolower( $list_type->name_plural )
+							),
+							sprintf(
+								/* translators: %1: Opening link, %2 closing link tag. */
+								esc_html__( 'You can use %1$ssmart tags%2$s to enter a dynamic value.', 'newsletter-optin-box' ),
+								'<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox">',
+								'</a>'
+							)
+						),
+						'default'     => '',
+						'append'      => '<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox"><span class="dashicons dashicons-shortcode"></span></a>',
+					);
+
+					continue;
+				}
+
+				// Child lists that are grouped by the parent list.
+				if ( ! empty( $list_type->parent_id ) ) {
+
+					foreach ( array_keys( $parent_lists ) as $parent_list_id ) {
+						$settings[ "child_{$list_type->id}_{$parent_list_id}" ] = array(
+							'el'       => 'multi_checkbox_alt',
+							'label'    => $list_type->name_plural,
+							'options'  => $list_type->get_lists( $parent_list_id ),
+							'restrict' => $this->get_restrict_key( $default_list_type->id ) . "=='" . esc_attr( $parent_list_id ) . "'",
+							'default'  => array(),
+						);
+					}
+
+					continue;
+				}
+
+				// Child lists that are not grouped by the parent list.
+				$settings[ $list_type->id ] = array(
+					'el'      => 'multi_checkbox_alt',
+					'label'   => $list_type->name_plural,
+					'options' => $list_type->get_lists(),
+					'default' => array(),
+				);
+			}
 		}
 
 		// Set custom fields.
-		foreach ( array_keys( $parent_lists ) as $parent_list_id ) {
-			$settings = array_replace(
-				$settings,
-				$this->get_custom_field_settings( $parent_list_id, $this->get_restrict_key( $default_list_type->id ) . "=='" . esc_attr( $parent_list_id ) . "'" )
-			);
-		}
-
-		// Map custom fields.
 		if ( $connection->has_universal_fields ) {
 			$settings = array_replace(
 				$settings,
 				$this->get_custom_field_settings( '' )
 			);
-		} else {
+		} elseif ( ! $connection->has_universal_contacts ) {
 			foreach ( array_keys( $parent_lists ) as $parent_list_id ) {
 				$settings = array_replace(
 					$settings,
@@ -186,6 +224,7 @@ class Add_Contact_Action extends Abstract_Action {
 				);
 			}
 		}
+
 		return $settings;
 	}
 
@@ -208,9 +247,21 @@ class Add_Contact_Action extends Abstract_Action {
 	 */
 	public function get_selected_lists( $settings ) {
 
-		$lists = array();
-
+		$lists             = array();
+		$connection        = $this->get_connection();
 		$default_list_type = $this->get_default_list_type();
+
+		// Universal contacts.
+		if ( $connection->has_universal_contacts ) {
+
+			foreach ( $connection->list_types as $list_type ) {
+				if ( ! empty( $settings[ $list_type->id ] ) ) {
+					$lists[ $list_type->id ] = noptin_parse_list( $settings[ $list_type->id ], true );
+				}
+			}
+
+			return $lists;
+		}
 
 		// Abort if default list type is not specified.
 		if ( empty( $settings[ $default_list_type ] ) ) {
@@ -307,4 +358,3 @@ class Add_Contact_Action extends Abstract_Action {
 	}
 
 }
-

@@ -61,6 +61,11 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 	public $has_universal_fields = false;
 
 	/**
+	 * @var bool Does this connection require contacts to belong to a list?
+	 */
+	public $has_universal_contacts = false;
+
+	/**
      * Initializes the connection.
      */
     public function before_initialize() {
@@ -524,6 +529,16 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 
 		// Process the subscriber.
 		$this->process_contact( $noptin_subscriber->email, $args );
+	}
+
+	/**
+	 * Removes a remote subscriber by email.
+	 *
+	 * @param string $email_address The email ID.
+	 * @since 1.0.0
+	 */
+	public function remove_contact( $email_address ) {
+		// Optionally implemented by child classes.
 	}
 
 	/**

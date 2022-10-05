@@ -58,8 +58,34 @@ abstract class List_Action extends Abstract_Action {
 		// Fetch the parent and child lists.
 		list( $group, $lists ) = $this->get_list_and_group( $rule->action_settings );
 
-		// In cases where the lists are grouped by type.
-		if ( ! empty( $this->group_type ) ) {
+		if ( $this->get_connection()->has_universal_contacts ) {
+			if ( $this->is_taggy ) {
+				$list_names = noptin_parse_list( $lists, true );
+			} else {
+				$all_lists  = $this->get_lists();
+				$list_names = array();
+
+				foreach ( noptin_parse_list( $lists, true ) as $list_id ) {
+					$list_names[] = isset( $all_lists[ $list_id ] ) ? $all_lists[ $list_id ] : $list_id;
+				}
+			}
+
+			if ( empty( $list_names ) ) {
+				return $this->get_description();
+			}
+
+			$plural     = count( $list_names ) > 1;
+			$list_names = implode( ', ', $list_names );
+			return sprintf(
+				'%s <p class="description">%s</p>',
+				$this->get_description(),
+				sprintf(
+					'%s: <code>%s</code>',
+					esc_html( $plural ? $this->list_name_plural : $this->list_name ),
+					esc_html( $list_names )
+				)
+			);
+		} elseif ( ! empty( $this->group_type ) ) { // In cases where the lists are grouped by type.
 
 			// Abort if a group was not specified.
 			if ( empty( $group ) ) {
@@ -80,12 +106,12 @@ abstract class List_Action extends Abstract_Action {
 
 			if ( $this->is_taggy ) {
 				$list_names = $lists;
-				$plural     = 1 < count( noptin_parse_list( $list_names, 1 ) );
+				$plural     = 1 < count( noptin_parse_list( $list_names, true ) );
 			} else {
 				$all_lists  = $this->get_children( $group );
 				$list_names = array();
 
-				foreach ( noptin_parse_list( $lists, 1 ) as $list_id ) {
+				foreach ( noptin_parse_list( $lists, true ) as $list_id ) {
 					$list_names[] = isset( $all_lists[ $list_id ] ) ? $all_lists[ $list_id ] : $list_id;
 				}
 
@@ -112,12 +138,12 @@ abstract class List_Action extends Abstract_Action {
 
 			if ( $this->is_taggy ) {
 				$list_name = $lists;
-				$plural    = 1 < count( noptin_parse_list( $lists, 1 ) );
+				$plural    = 1 < count( noptin_parse_list( $lists, true ) );
 			} else {
 				$all_lists = $this->get_lists();
 				$list_name = array();
 
-				foreach ( noptin_parse_list( $lists ) as $list_id ) {
+				foreach ( noptin_parse_list( $lists, true ) as $list_id ) {
 					$list_name[] = isset( $all_lists[ $list_id ] ) ? $all_lists[ $list_id ] : $list_id;
 				}
 
@@ -207,8 +233,10 @@ abstract class List_Action extends Abstract_Action {
 		$parent   = '';
 		$children = '';
 
-		// If default list type, we'll have no parent.
-		if ( empty( $this->group_type ) ) {
+		// Universal contacts.
+		if ( $this->get_connection()->has_universal_contacts ) {
+			$children = noptin_parse_list( $settings[ $this->list_type ], true );
+		} elseif ( empty( $this->group_type ) ) { // If default list type, we'll have no parent.
 			if ( ! empty( $settings[ $this->list_type ] ) ) {
 				$children = $settings[ $this->list_type ];
 			}

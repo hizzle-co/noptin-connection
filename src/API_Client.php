@@ -49,7 +49,7 @@ class API_Client {
 	 * @throws Exception
 	 */
 	public function get( $resource, $args = array() ) {
-		return $this->request( 'GET', $resource, $args );
+		return $this->request( 'GET', $resource, urlencode_deep( $args ) );
 	}
 
 	/**
