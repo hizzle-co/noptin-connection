@@ -112,7 +112,7 @@ class API_Client {
 			$url = $resource;
 		}
 
-		$data = apply_filters( 'noptin_connection_request_data', $this->prepare_data( $data, $method ), $method, $url );
+		$data = apply_filters( 'noptin_connection_request_data', $this->prepare_data( $data, $method ), $method, $url, $this );
 		$args = array(
 			'url'       => $url,
 			'method'    => $method,
@@ -189,6 +189,8 @@ class API_Client {
 			if ( ! in_array( $method, array( 'GET', 'DELETE' ), true ) ) {
 				$headers['Content-Type'] = 'application/json';
 			}
+		} else {
+			$headers['Content-Type'] = 'application/x-www-form-urlencoded';
 		}
 
 		return $headers;
