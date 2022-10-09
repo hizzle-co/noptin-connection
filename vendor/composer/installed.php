@@ -11,12 +11,12 @@
     ),
     'versions' => array(
         'hizzle/logger' => array(
-            'pretty_version' => '0.0.2',
-            'version' => '0.0.2.0',
+            'pretty_version' => '0.0.3',
+            'version' => '0.0.3.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../hizzle/logger',
             'aliases' => array(),
-            'reference' => '8b50ce63b51812c7d5d218dc2ad4273c8f1dde9d',
+            'reference' => 'd5692e3bfa8acd69201ef9959bf07f1b55b783c7',
             'dev_requirement' => false,
         ),
         'noptin/connection' => array(

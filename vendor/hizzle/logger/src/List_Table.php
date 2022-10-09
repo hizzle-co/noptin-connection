@@ -81,8 +81,19 @@ class List_Table extends \WP_List_Table {
 		/**@var Handlers\DB $db */
 		$db = Logger::get_instance()->get_handler( 'db' );
 
-		if ( $db && 'delete' === $action ) {
-			$db->delete( $_POST['id'] );
+		if ( $db ) {
+
+			if ( 'delete' === $action ) {
+				$db->delete( $_POST['id'] );
+			}
+
+			if ( 'delete_all' === $action ) {
+				if ( ! empty( $_REQUEST['hlog_source'] ) ) {
+					$db->clear( sanitize_text_field( $_REQUEST['hlog_source'] ) );
+				} else {
+					$db->flush();
+				}
+			}
 		}
 
 		do_action( 'hizzle_logs_process_bulk_action', $action, $this );
@@ -267,7 +278,8 @@ class List_Table extends \WP_List_Table {
 	protected function get_bulk_actions() {
 
 		$actions = array(
-			'delete' => __( 'Delete', 'hizzle-logger' ),
+			'delete'     => __( 'Delete', 'hizzle-logger' ),
+			'delete_all' => __( 'Delete All', 'hizzle-logger' ),
 		);
 
 		/**
