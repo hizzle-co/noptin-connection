@@ -73,7 +73,7 @@ abstract class Email_Sender {
 
 		// Prepare sender options.
         $lists           = array();
-		$current_options = $campaign->get( $this->slug );
+		$current_options = $campaign->get( $this->sender );
 
 		if ( empty( $current_options ) ) {
 			$current_options = array();
@@ -175,7 +175,7 @@ abstract class Email_Sender {
 						type="text"
 						id="noptin-<?php echo esc_attr( $this->sender ); ?>-campaign-sender-field-<?php echo esc_attr( $list_type ); ?>"
 						class="noptin-col"
-						name="noptin_email[<?php echo esc_attr( $this->slug ); ?>][<?php echo esc_attr( $list_type ); ?>]"
+						name="noptin_email[<?php echo esc_attr( $this->sender ); ?>][<?php echo esc_attr( $list_type ); ?>]"
 						value="<?php echo esc_attr( implode( ', ', noptin_parse_list( $details['value'] ) ) ); ?>"
 						placeholder="Example 1, Example 2" />
 
@@ -187,7 +187,7 @@ abstract class Email_Sender {
 							<li>
 								<label>
 									<input
-										name='noptin_email[<?php echo esc_attr( $this->slug ); ?>][<?php echo esc_attr( $list_type ); ?>][]'
+										name='noptin_email[<?php echo esc_attr( $this->sender ); ?>][<?php echo esc_attr( $list_type ); ?>][]'
 										id="noptin-<?php echo esc_attr( $this->sender ); ?>-campaign-sender-field-<?php echo esc_attr( $list_type ); ?>__<?php echo esc_attr( $option_key ); ?>"
 										type='checkbox'
 										value='<?php echo esc_attr( $option_key ); ?>'
@@ -199,13 +199,13 @@ abstract class Email_Sender {
 						<?php endforeach; ?>
 					</ul>
 
-					<input type="hidden" name="noptin_email[<?php echo esc_attr( $this->slug ); ?>][<?php echo esc_attr( $list_type ); ?>][]" value="0" />
+					<input type="hidden" name="noptin_email[<?php echo esc_attr( $this->sender ); ?>][<?php echo esc_attr( $list_type ); ?>][]" value="0" />
 				<?php else : ?>
 
 					<select
 						id="noptin-<?php echo esc_attr( $this->sender ); ?>-campaign-sender-field-<?php echo esc_attr( $list_type ); ?>"
 						class="noptin-col"
-						name="noptin_email[<?php echo esc_attr( $this->slug ); ?>][<?php echo esc_attr( $list_type ); ?>]"
+						name="noptin_email[<?php echo esc_attr( $this->sender ); ?>][<?php echo esc_attr( $list_type ); ?>]"
 					>
 						<?php foreach ( $details['options'] as $option_key => $option_value ) : ?>
 							<option value="<?php echo esc_attr( $option_key ); ?>" <?php selected( $option_key, $details['value'] ); ?>>
@@ -242,7 +242,7 @@ abstract class Email_Sender {
 
 		// Prepare sender options.
         $lists           = array();
-		$current_options = $campaign->get( $this->slug );
+		$current_options = $campaign->get( $this->sender );
 
 		if ( empty( $current_options ) ) {
 			return;
@@ -251,7 +251,7 @@ abstract class Email_Sender {
 		/** @var Connection $connection */
         $connection = noptin()->integrations->integrations[ $this->sender ];
 
-        $default_list_type = $connection->get_default_list_type();
+		$default_list_type = $connection->get_default_list_type();
 
 		// Abort if the default list type is not set.
 		if ( empty( $current_options[ $default_list_type->id ] ) || '-1' === $current_options[ $default_list_type->id ] ) {

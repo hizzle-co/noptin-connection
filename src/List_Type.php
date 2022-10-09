@@ -48,7 +48,7 @@ abstract class List_Type {
 	/**
 	 * @var bool $can_filter_campaigns Whether this list type can be used to filter campaign recipients.
 	 */
-	public $can_filter_campaigns = false;
+	public $can_filter_campaigns = true;
 
 	/**
 	 * @var Connection The connection instance.
