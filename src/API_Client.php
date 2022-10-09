@@ -86,10 +86,11 @@ class API_Client {
 	/**
 	 * @param string $resource
 	 * @return mixed
+	 * @param array $args
 	 * @throws Exception
 	 */
-	public function delete( $resource ) {
-		return $this->request( 'DELETE', $resource );
+	public function delete( $resource, $args = array() ) {
+		return $this->request( 'DELETE', $resource, urlencode_deep( $args ) );
 	}
 
 	/**
@@ -274,7 +275,7 @@ class API_Client {
 	 * @param array|\WP_Error  $data  Optional. Extra error data. Default empty array.
 	 */
 	public function log( $message, $level = 'info', $data = array() ) {
-		if ( ! empty( $this->connection ) ) {
+		if ( ! empty( $this->connection ) && noptin()->integrations ) {
 			/** @var Connection $connection */
 			$connection = noptin()->integrations->integrations[ $this->connection ];
 

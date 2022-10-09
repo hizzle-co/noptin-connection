@@ -46,11 +46,7 @@ abstract class Email_Sender {
 	 */
 	public function generate_email_content( $campaign ) {
 
-		return noptin_generate_email_content(
-			$campaign,
-			array(),
-			false
-		);
+		return noptin_generate_email_content( $campaign, array(), false );
 	}
 
 	/**
@@ -223,7 +219,7 @@ abstract class Email_Sender {
 				<?php if ( ! empty( $details['description'] ) ) : ?>
 					<p class="description"><?php echo wp_kses_post( $details['description'] ); ?></p>
 				<?php endif; ?>
-            </div>
+			</div>
 		<?php endforeach; ?>
 
 		<?php
@@ -279,9 +275,9 @@ abstract class Email_Sender {
 
 			// Process taggy lists && orphans.
 			if ( ! empty( $list_type->is_taggy ) && empty( $list_type->parent_id ) ) {
-				$value = isset( $current_options[ $list_type->id ] ) ? array_filter( noptin_parse_list( $current_options[ $list_type->id ] ) ) : '';
+				$value = isset( $current_options[ $list_type->id ] ) ? array_filter( noptin_parse_list( $current_options[ $list_type->id ], true ) ) : '';
 			} else {
-				$value = isset( $current_options[ $list_type->id . '_' . $sends_to ] ) ? array_filter( noptin_parse_list( $current_options[ $list_type->id . '_' . $sends_to ] ) ) : '';
+				$value = isset( $current_options[ $list_type->id . '_' . $sends_to ] ) ? array_filter( noptin_parse_list( $current_options[ $list_type->id . '_' . $sends_to ], true ) ) : '';
 			}
 
 			// Add the list.

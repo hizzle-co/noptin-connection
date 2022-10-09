@@ -442,7 +442,11 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 	 *
 	 * @param array $data
 	 */
-	public function save_oauth_settings( $data ) {}
+	public function save_oauth_settings( $data ) {
+		if ( isset( $data['access_token'] ) ) {
+			update_noptin_option( $this->slug . '_access_token', $data['access_token'] );
+		}
+	}
 
 	/**
 	 * Handles oauth disconnections.
@@ -469,7 +473,9 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 	 * Deletes the connection settings.
 	 *
 	 */
-	public function delete_oauth_settings() {}
+	public function delete_oauth_settings() {
+		update_noptin_option( $this->slug . '_access_token', '' );
+	}
 
 	/**
 	 * Empties the cache.
