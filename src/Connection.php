@@ -484,6 +484,11 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 	 */
 	public function empty_cache() {
 
+		// Abort if we have no lists.
+		if ( empty( $this->list_types ) ) {
+			return;
+		}
+
 		// Some cache keys are prefixed with the parent list ID.
 		$default_type    = $this->get_default_list_type();
 		$parent_list_ids = empty( $default_type ) ? array() : array_keys( $default_type->get_lists() );
