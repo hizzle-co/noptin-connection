@@ -201,13 +201,8 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 		$slug    = $this->slug;
 		$options = $this->add_enable_integration_option( array() );
 
-		if ( ! $this->is_oauth ) {
-			$options = $this->add_connection_options( $options );
-		}
-
+		// Debug mode checkbox.
 		if ( $this->is_connected() ) {
-
-			// Debug mode checkbox.
 			$options[ "noptin_{$slug}_debug_mode" ] = array(
 				'type'        => 'checkbox_alt',
 				'el'          => 'input',
@@ -223,6 +218,13 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 				'default'     => false,
 				'restrict'    => $this->get_enable_integration_option_name(),
 			);
+		}
+
+		if ( ! $this->is_oauth ) {
+			$options = $this->add_connection_options( $options );
+		}
+
+		if ( $this->is_connected() ) {
 
 			// Double optin.
 			if ( $this->double_optin ) {
