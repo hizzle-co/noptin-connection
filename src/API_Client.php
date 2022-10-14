@@ -94,6 +94,16 @@ class API_Client {
 	}
 
 	/**
+	 * @param string $resource
+	 * @return mixed
+	 * @param array $args
+	 * @throws Exception
+	 */
+	public function delete_body( $resource, $args = array() ) {
+		return $this->request( 'DELETE_BODY', $resource, $args );
+	}
+
+	/**
 	 * @param string $method
 	 * @param string $resource
 	 * @param array $data
@@ -116,7 +126,7 @@ class API_Client {
 		$data = apply_filters( 'noptin_connection_request_data', $this->prepare_data( $data, $method ), $method, $url, $this );
 		$args = array(
 			'url'       => $url,
-			'method'    => $method,
+			'method'    => 'DELETE_BODY' === $method ? 'DELETE' : $method,
 			'headers'   => $this->get_headers( $method ),
 			'timeout'   => 10,
 			'sslverify' => apply_filters( 'noptin_connection_use_sslverify', true ),
@@ -190,7 +200,7 @@ class API_Client {
 			if ( ! in_array( $method, array( 'GET', 'DELETE' ), true ) ) {
 				$headers['Content-Type'] = 'application/json';
 			}
-		} else {
+		} elseif ( ! in_array( $method, array( 'GET', 'DELETE' ), true ) ) {
 			$headers['Content-Type'] = 'application/x-www-form-urlencoded';
 		}
 
