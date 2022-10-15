@@ -803,6 +803,10 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 
 				$value = get_noptin_option( sanitize_text_field( $option . $list_type->id ) );
 
+				if ( null === $value ) {
+					$value = $list_type->get_default_list_id();
+				}
+
 				if ( empty( $value ) || '-1' === $value ) {
 					continue;
 				}
