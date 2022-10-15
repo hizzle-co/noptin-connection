@@ -1,6 +1,6 @@
 {
     "name": "noptin/connection",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "type": "library",
     "description": "A standardized way of creating Noptin connections.",
     "keywords": ["wordpress","noptin","connection"],
