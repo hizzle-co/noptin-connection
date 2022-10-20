@@ -897,7 +897,7 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 
 		// Loop through all available lists.
 		foreach ( $this->get_default_list_type()->get_lists() as $list_id => $list_name ) {
-			$this->map_contact_to_custom_fields(
+			$this->map_custom_fields_settings(
 				$this->get_custom_fields( $list_id ),
 				"field.{$this->slug}_{$list_id}",
 				$list_name
