@@ -115,8 +115,6 @@ class API_Client {
 	protected function request( $method, $resource, $data = array() ) {
 		$this->reset();
 
-		$this->log( "Sending a {$method} request to {$resource}", 'info', $data );
-
 		if ( 'https://' !== substr( $resource, 0, 8 ) ) {
 			$url = trailingslashit( $this->base_url ) . ltrim( $resource, '/' );
 		} else {
@@ -124,6 +122,9 @@ class API_Client {
 		}
 
 		$data = apply_filters( 'noptin_connection_request_data', $this->prepare_data( $data, $method ), $method, $url, $this );
+
+		$this->log( "Sending a {$method} request to {$resource}", 'info', $data );
+
 		$args = array(
 			'url'       => $url,
 			'method'    => 'DELETE_BODY' === $method ? 'DELETE' : $method,
