@@ -144,12 +144,37 @@ class Add_List extends List_Action {
 		} elseif ( $default_list_type->id === $this->list_type ) { // If default list type, add setting to select a single list.
 			$lists = $this->get_lists();
 
-			$settings[ $this->list_type ] = array(
-				'el'      => 'select',
-				'label'   => $this->list_name,
-				'options' => $this->get_lists(),
-				'default' => $list_object->get_default_list_id(),
-			);
+			if ( $this->is_taggy ) {
+				$settings[ $this->list_type ] = array(
+					'el'          => 'input',
+					'type'        => 'text',
+					'label'       => $this->list_name_plural,
+					'description' => sprintf(
+						'%s <span v-show="availableSmartTags">%s</span>',
+						sprintf(
+							// translators: %s is the plural form of the list name.
+							__( 'Enter a comma separated list of %s.', 'newsletter-optin-box' ),
+							strtolower( $this->list_name_plural )
+						),
+						sprintf(
+							/* translators: %1: Opening link, %2 closing link tag. */
+							esc_html__( 'You can use %1$ssmart tags%2$s to enter a dynamic value.', 'newsletter-optin-box' ),
+							'<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox">',
+							'</a>'
+						)
+					),
+					'default'     => '',
+					'append'      => '<a href="#TB_inline?width=0&height=550&inlineId=noptin-automation-rule-smart-tags" class="thickbox"><span class="dashicons dashicons-shortcode"></span></a>',
+				);
+			} else {
+
+				$settings[ $this->list_type ] = array(
+					'el'      => 'select',
+					'label'   => $this->list_name,
+					'options' => $this->get_lists(),
+					'default' => $list_object->get_default_list_id(),
+				);
+			}
 
 			// Map custom fields.
 			if ( $connection->has_universal_fields ) {
