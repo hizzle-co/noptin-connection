@@ -98,6 +98,7 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 		// Register integration.
 		add_filter( 'noptin_connection_integrations', array( $this, 'register' ), $this->priority );
 		add_filter( 'noptin_upsell_integrations', '__return_false', $this->priority );
+		add_filter( 'noptin_com_helper_premium_addons', array( $this, 'register_premium_addon' ), $this->priority );
 
 		// Forms.
 		add_action( 'noptin_form_available_integration_settings', array( $this, 'display_form_options' ), $this->priority );
@@ -135,6 +136,16 @@ abstract class Connection extends \Noptin_Abstract_Integration {
 	public function register( $types ) {
 		$types[ $this->id ] = $this;
 		return $types;
+	}
+
+	/**
+	 * Registers premium addons.
+	 *
+	 * @param string[] $addons
+	 */
+	public function register_premium_addon( $addons ) {
+		$addons[] = $this->name;
+		return $addons;
 	}
 
 	/**
